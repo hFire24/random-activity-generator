@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Random Activity Generator</title>
+    <link id="themeStylesheet" href="css/style.css" rel="stylesheet" type="text/css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 50px;
+      }
+      .two-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px; /* Add space between items */
+        margin: 20px 0;
+      }
+      .two-list a {
+        font-size: 20px;
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+        flex: 1; /* Make links flexible */
+        min-width: 150px; /* Ensure a minimum width to prevent crowding */
+        text-align: center;
+      }
+      .two-list a:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+    </style>
+  </head>
+  <body class="theme3">
+    <h1>Here are some short games.</h1>
+    <h2 id='suggestion'></h2>
+    <div class='two-list'>
+      <a href="http://www.flaminglunchbox.net/curvy">Curvy</a>
+      <a href="http://entanglement.gopherwoodstudios.com/en-US-index.html">Entanglement</a>
+      <a href="https://www.free-spider-solitaire.com/">Spider Solitaire (1 Suit)</a>
+      <a href="http://minesweeper.online">Minesweeper (Medium)</a>
+      <a href="https://sudoku.com/easy">Sudoku (Easy)</a>
+    </div>
+    <select id="themeSelector" onchange="changeTheme()">
+      <option value="css/style.css">Original Theme</option>
+      <option value="css/digital.css">Digital Theme</option>
+    </select>
+    <script src="script.js"></script>
+    <script>
+      var games = ["Curvy",
+      "Entanglement",
+      "Spider Solitaire",
+      "Minesweeper (Medium)",
+      "Sudoku (Easy)"];
+      var game = games[Math.floor(Math.random() * games.length)]
+      document.getElementById("suggestion").innerHTML = "Can't decide? Choose " + game + ".";
+      window.onload = loadTheme();
+    </script>
+  </body>
+</html>

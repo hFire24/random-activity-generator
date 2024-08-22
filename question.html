@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Answer this question</title>
+    <link id="themeStylesheet" href="css/style.css" rel="stylesheet" type="text/css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id='question'></h1>
+    <select id="themeSelector" onchange="changeTheme()">
+      <option value="css/style.css">Original Theme</option>
+      <option value="css/digital.css">Digital Theme</option>
+    </select>
+    <script src="script.js"></script>
+    <script>
+    const questions = ['How can you focus your mind?',
+    'How can you replace a bad rabbit with a good one?',
+    'What routines are the best for you?',
+    'How can you do things you need to do?',
+    'How can you catch up with your schedule and tasks?',
+    'How can you stay on task?',
+    'How can you get things done?',
+    'How can you do the things you\'re supposed to do?',
+    'How can you be productive?',
+    'How can you have an active, productive day?',
+    'Why is time so precious?',
+    'How can you better spend your time?',
+    'What can you do to become better?',
+    'How can you maintain your organization\'s good reputation?',
+    //'How can you pass the semester?',
+    //'How can you pass your college classes?',
+    'What more website coding skills can be learned?',
+    'How can you deal with temptations?',
+    'Without fraud or pure luck, how can you become a millionaire?',
+    'How can you make distracting thoughts go away? Humor?',
+    'How can you pick up a new, good habit?',
+    'What are some good things you can do?',
+    'What are some fun things you can do?',
+    'What are some better things you can do?',
+    'How can you do great things?',
+    'What is a good way to take a break?',
+    'How can you choose which fun thing is most worth your time?',
+    'How can you not let your mind wander off?',
+    'How can you avoid mindlessness?',
+    'How can you avoid thinking of something you shouldn\'t think of?',
+    'How can you forget things that are currently distracting you?',
+    'How can you drop distracting habits?',
+    'How can you break unhealthy habits?',
+    'How can you control yourself?',
+    'When you are procrastinating, how can you get back?',
+    'How can you stop procrastinating?',
+    'How can you stop going to blocked websites when necessary?',
+    'How do you not sidetrack?',
+    'How can you have a good day?',
+    'How can you not be like an idiot?',
+    'What makes you very happy? Think about it for a bit.',
+    //'What compels you to look at anime pictures?',
+    'How can you overcome addictions?',
+    'Why do certain things appeal to you?',
+    'Where do you see yourself in 2 years?',
+    'Why do you love and seek out cute things?',
+    'How can you be consistent with your moral values?',
+    'What other important things do you need to get done?',
+    'What will it take for you to become successful?',
+    'What would a young holy adult do at this moment?'];
+
+    function randomQuestion(index) {
+      if (index < 0 || index >= questions.length)
+        index = Math.floor(Math.random() * questions.length);
+      document.getElementById("question").innerHTML = questions[index];
+    }
+
+    randomQuestion(-1);
+    window.onload = loadTheme;
+    </script>
+  </body>
+</html>

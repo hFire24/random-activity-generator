@@ -1,0 +1,68 @@
+body {
+  background-color: white;
+  color: black;
+}
+button {
+  background-color: lightgray;
+  border: none;
+  color: white;
+}
+textarea {
+  background-color: white;
+  color: black;
+}
+select {
+  background-color: white;
+  color: black;
+}
+.activity-list-item {
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+}
+.activity-list-item button.edit, .activity-button, input:checked + .slider, .save-exit-group .save-button {
+  background-color: #4CAF50;
+}
+.activity-list-item button.delete, .save-exit-group .exit-button, #tutorialModal button, .confirm-button, .skip-button {
+  background-color: #f44336;
+}
+.activity-list-item button.archive {
+  background-color: #f0ad4e;
+}
+.activity-list-item button.unarchive, .main-page-button, .advanced-options-btn, .manage-button {
+  background-color: #007bff;
+}
+.tutorial-button {
+  background-color: #800080;
+}
+.popup-window {
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.popup-window .row input[type="text"] {
+  border: 1px solid #ccc;
+}
+.slider {
+  background-color: #ccc;
+}
+.slider:before, .save-exit-group button {
+  background-color: white;
+}
+.confirmation-dialog {
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.cancel-button {
+  background-color: #d3d3d3;
+  color: black;
+}
+.two-list a {
+  color: #4a90e2;
+  background-color: #fff;
+  border: 1px solid #ddd;
+}
+.two-list a:hover {
+  background-color: #4a90e2;
+  color: #fff;
+}
