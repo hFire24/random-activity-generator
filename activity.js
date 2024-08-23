@@ -1,5 +1,6 @@
+let activities = getActivities().filter((activity) => !activity.archived);
+
 function markAsCompleted() {
-  const activities = getActivities().filter((activity) => !activity.archived);
   if (activities.length === 0) return;
 
   // Get the current activity based on the text content on the webpage
@@ -24,7 +25,6 @@ function markAsCompleted() {
 }
 
 function skipTask() {
-  const activities = getActivities().filter((activity) => !activity.archived);
   if (activities.length === 0) return;
 
   // Get the current activity based on the text content on the webpage
@@ -127,7 +127,37 @@ function isActivityInTemporaryArray(activityText) {
   );
 }
 
+function getQueryParameter(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
+
+function filterActivities(option) {
+  switch (option) {
+    case 'highPriority':
+      activities = activities.filter(activity => activity.importance > 1);
+      break;
+    case 'lowPriority':
+      activities = activities.filter(activity => activity.importance <= 2);
+      break;
+    case 'lazy':
+      activities = activities.filter(activity => !activity.activeTask);
+      break;
+    case 'short':
+      activities = activities.filter(activity => !activity.longTask);
+      break;
+    case 'onTheGo':
+      activities = activities.filter(activity => activity.mobileFriendlyTask);
+      break;
+    default:
+      break;
+  }
+}
+
 window.onload = function () {
   loadTheme();
+
+  const selectedFilter = getQueryParameter('filter') || 'default';
+  filterActivities(selectedFilter);
   generateActivity();
 };

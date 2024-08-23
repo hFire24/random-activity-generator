@@ -1,37 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Random Activity Generator</title>
-    <link id="themeStylesheet" rel="stylesheet" href="css/style.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            margin: 5px;
-            border-radius: 4px;
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>Random Activity Generator</title>
+  <link id="themeStylesheet" rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    #filters button {
+      border: none;
+      color: black;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+      border-radius: 4px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-    <h1 id="activity">Random Activity Generator</h1>
-    <button onclick="markAsCompleted()" class="activity-button">Mark as Completed</button>
-    <button onclick="skipTask()" class="skip-button">Skip Task</button>
-    <br>
-    <button onclick="location.href='manage.html'" class="manage-button">Manage Activities</button>
-    <br><br>
-    <select id="themeSelector" onchange="changeTheme()">
-        <option value="css/style.css">Original Theme</option>
-        <option value="css/digital.css">Digital Theme</option>
-    </select>
+  <h1>Random Activity Generator</h1>
+  <p>Select how you want to filter your activities:</p>
+  <div id="filters">
+    <button class="default-btn" onclick="applyFilter('default')">No Filter</button>
+    <button class="short-btn" onclick="applyFilter('short')">Short Only</button>
+    <button class="lazy-btn" onclick="applyFilter('lazy')">Lazy Only</button>
+    <button class="low-priority-btn" onclick="applyFilter('lowPriority')">Low-Priority</button>
+    <button class="high-priority-btn" onclick="applyFilter('highPriority')">High-Priority</button>
+    <button class="mobile-friendly-btn" onclick="applyFilter('mobile')">Mobile-Friendly</button>
+  </div>
+  <br>
+  <select id="themeSelector" onchange="changeTheme()">
+    <option value="css/style.css">Original Theme</option>
+    <option value="css/digital.css">Digital Theme</option>
+  </select>
+  
+  <script src="script.js"></script>
+  <script>
+    function applyFilter(selectedFilter) {
+      window.location.href = `activity.html?filter=${selectedFilter}`;
+    }
 
-    <script src="index.js"></script>
-    <script src="script.js"></script>
+    window.onload = loadTheme;
+  </script>
 </body>
 </html>
