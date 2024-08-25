@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Random Activity Generator</title>
+    <link id="themeStylesheet" href="css/style.css" rel="stylesheet" type="text/css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 50px;
+      }
+      button {
+        border: none;
+        color: black;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        margin: 5px;
+        border-radius: 4px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body class="theme3">
+    <h1 id="question">Are you willing to play a moderately graphically demanding game?</h1>
+    <div id="buttons">
+      <button class="yes-button" onclick="goToPage(21)">Yes</button>
+      <button class="no-button" onclick="goToPage(23)">No</button>
+    </div>
+    <div><button onclick="goBack()">Go Back</button></div>
+    <div><button onclick="goToNextGame()">I don't know what to play</button></div>
+    <br>
+    <select id="themeSelector" onchange="changeTheme()">
+      <option value="css/style.css">Original Theme</option>
+      <option value="css/digital.css">Digital Theme</option>
+    </select>
+    
+    <script src="script.js"></script>
+    <script src="games.js"></script>
+  </body>
+</html>

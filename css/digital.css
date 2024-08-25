@@ -21,7 +21,7 @@ select, input[type="text"] {
   border: 1px solid #00ffcc;
   background-color: #1f1f1f;
 }
-.activity-list-item button.delete, .exit-button, .confirm-button, .skip-button {
+.activity-list-item button.delete, .exit-button, .confirm-button, .skip-button, .no-button {
   background-color: #ff4b4b; /* Soft red/pink for the cancel button */
   color: #fff; /* White text color */
 }
