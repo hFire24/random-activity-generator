@@ -1,16 +1,8 @@
 let activities = getActivities().filter((activity) => !activity.archived);
 let standingActivityPending = false;
 let currentActivity = null;
-
-function addToTemporaryArray(arrayName, activityText) {
-  let tempArray = sessionStorage.getItem(arrayName)
-    ? JSON.parse(sessionStorage.getItem(arrayName))
-    : [];
-  if (!tempArray.includes(activityText)) {
-    tempArray.push(activityText);
-    sessionStorage.setItem(arrayName, JSON.stringify(tempArray));
-  }
-}
+let completedActivities = [];
+let skippedActivities = [];
 
 function saveActivity(updatedActivity) {
   const activities = getActivities();
@@ -26,49 +18,60 @@ function saveActivity(updatedActivity) {
 
 function generateActivity() {
   const activityElement = document.getElementById("activity");
-  const activities = getActivities().filter(
-    (activity) =>
-      !activity.archived && !isActivityInTemporaryArray(activity.text)
+  activities = activities.filter(
+    (activity) => !isActivityInTemporaryArray(activity.text)
   );
-  const previousActivityText = activityElement.innerHTML;
 
   if (activities.length === 0) {
-    const skippedActivities = JSON.parse(
-      sessionStorage.getItem("skippedActivities") || "[]"
-    );
-
     if (skippedActivities.length > 0) {
-      sessionStorage.removeItem("skippedActivities");
+      activities = getActivities().filter((activity) =>
+        skippedActivities.includes(activity.text)
+      );
+      skippedActivities = [];
       generateActivity(); // Retry after clearing skipped activities
     } else {
       activityElement.innerHTML = "No more activities to load.";
+      activityElement.style.cursor = "default";
+      activityElement.style.textDecoration = "none";
+      activityElement.onclick = null;
     }
   } else {
-    let randomActivity;
-    do {
-      randomActivity =
-        activities[Math.floor(Math.random() * activities.length)];
-    } while (
-      randomActivity.text === previousActivityText &&
-      activities.length > 1
+    const savedActivityText = sessionStorage.getItem("currentActivity");
+    const savedActivity = activities.find(
+      (activity) => activity.text === savedActivityText
     );
-    currentActivity = randomActivity;
-    if (currentActivity.standingTask && !standingActivityPending) {
-      activityElement.innerHTML = "Stand up and stretch if you can.";
-      activityElement.style.cursor = "pointer";
-      activityElement.style.textDecoration = "underline";
-      activityElement.onclick = function () {
-        displayActivity(currentActivity);
-        document.querySelector(".activity-button").style.display = "inline";
-        document.querySelector(".skip-button").style.display = "inline";
-      };
-      standingActivityPending = true;
-      document.querySelector(".activity-button").style.display = "none";
-      document.querySelector(".skip-button").style.display = "none";
+    if (savedActivity) {
+      currentActivity = savedActivity;
     } else {
-      displayActivity(currentActivity);
+      const previousActivityText = activityElement.innerHTML;
+      let randomActivity;
+      do {
+        randomActivity =
+          activities[Math.floor(Math.random() * activities.length)];
+      } while (
+        randomActivity.text === previousActivityText &&
+        activities.length > 1
+      );
+      currentActivity = randomActivity;
+      sessionStorage.setItem("currentActivity", currentActivity.text);
     }
+    currentActivity.standingTask && !standingActivityPending ? displayStand(currentActivity) : displayActivity(currentActivity);
   }
+}
+
+function displayStand(currentActivity) {
+  const activityElement = document.getElementById("activity");
+  activityElement.innerHTML = "Stand up and stretch if you can.";
+  activityElement.style.cursor = "pointer";
+  activityElement.style.textDecoration = "underline";
+  activityElement.onclick = function () {
+    displayActivity(currentActivity);
+    document.querySelector(".activity-button").style.display = "inline";
+    document.querySelector(".skip-button").style.display = "inline";
+  };
+  standingActivityPending = true;
+  document.querySelector(".activity-button").style.display = "none";
+  document.querySelector(".skip-button").style.display = "none";
 }
 
 function displayActivity(activity) {
@@ -101,7 +104,7 @@ function markAsCompleted() {
   currentActivity.timesSkippedConsecutively = 0;
 
   // Add to completed activities array
-  addToTemporaryArray("completedActivities", currentActivity.text);
+  completedActivities.push(currentActivity.text);
 
   // Save the activity back to localStorage
   saveActivity(currentActivity);
@@ -117,7 +120,7 @@ function skipTask() {
   currentActivity.timesSkippedConsecutively += 1;
 
   // Add to skipped activities array
-  addToTemporaryArray("skippedActivities", currentActivity.text);
+  skippedActivities.push(currentActivity.text);
 
   // Save the activity back to localStorage
   saveActivity(currentActivity);
@@ -127,12 +130,6 @@ function skipTask() {
 }
 
 function isActivityInTemporaryArray(activityText) {
-  const skippedActivities = JSON.parse(
-    sessionStorage.getItem("skippedActivities") || "[]"
-  );
-  const completedActivities = JSON.parse(
-    sessionStorage.getItem("completedActivities") || "[]"
-  );
   return (
     skippedActivities.includes(activityText) ||
     completedActivities.includes(activityText)
