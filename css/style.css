@@ -1,6 +1,6 @@
 body {
-  background-color: white;
-  color: black;
+  background-color: #0f0f0f;
+  color: white;
 }
 button {
   background-color: lightgray;
@@ -17,15 +17,15 @@ select {
 }
 .activity-list-item {
   border: 1px solid #ccc;
-  background-color: #f9f9f9;
+  background-color: #1f1f1f;
 }
 .activity-list-item button.edit, .activity-button, input:checked + .slider, .save-exit-group .save-button, .yes-button {
   background-color: #4CAF50;
 }
-.activity-list-item button.delete, .save-exit-group .exit-button, #tutorialModal button, .confirm-button, .skip-button, .no-button {
+.activity-list-item button.archive, .activity-list-item button.delete, .save-exit-group .exit-button, #tutorialModal button, .confirm-button, .skip-button, .no-button {
   background-color: #f44336;
 }
-.activity-list-item button.archive, .maybe-button {
+.maybe-button {
   background-color: #f0ad4e;
 }
 .activity-list-item button.unarchive, .main-page-button, .advanced-options-btn, .manage-button, .game-button {
