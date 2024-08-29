@@ -30,7 +30,7 @@ function changeTheme() {
 }
 
 function loadTheme() {
-  const theme = localStorage.getItem('theme') || 'original';
+  const theme = localStorage.getItem('theme') || 'dark';
   document.body.className = theme;
   document.getElementById("themeSelector").value = theme;
 }
