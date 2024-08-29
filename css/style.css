@@ -1,94 +1,340 @@
 body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin-top: 50px;
   background-color: #0f0f0f;
-  color: white;
 }
 button {
-  background-color: lightgray;
   border: none;
-  color: white;
-}
-textarea {
-  background-color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 5px;
+  border-radius: 4px;
+  text-align: center;
+  background-color: lightgray;
   color: black;
 }
 select {
   background-color: white;
   color: black;
 }
-.activity-list-item {
-  border: 1px solid #ccc;
-  background-color: #1f1f1f;
-}
-.activity-list-item button.edit, .activity-button, input:checked + .slider, .save-exit-group .save-button, .yes-button {
-  background-color: #4CAF50;
-}
-.activity-list-item button.archive, .activity-list-item button.delete, .save-exit-group .exit-button, #tutorialModal button, .confirm-button, .skip-button, .no-button {
-  background-color: #f44336;
-}
-.maybe-button {
-  background-color: #f0ad4e;
-}
-.activity-list-item button.unarchive, .main-page-button, .advanced-options-btn, .manage-button, .game-button {
-  background-color: #007bff;
-}
-.tutorial-button {
-  background-color: #800080;
-}
-.popup-window {
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-.popup-window .row input[type="text"] {
-  border: 1px solid #ccc;
-}
-.slider {
-  background-color: #ccc;
-}
-.slider:before, .save-exit-group button {
-  background-color: white;
-}
-.confirmation-dialog {
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-.cancel-button {
-  background-color: #d3d3d3;
-  color: black;
+.two-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px; /* Add space between items */
+  margin: 20px 0;
 }
 .two-list a {
+  font-size: 20px;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+  flex: 1; /* Make links flexible */
+  min-width: 150px; /* Ensure a minimum width to prevent crowding */
+  text-align: center;
+}
+.two-list a:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* manage.html items */
+.activity-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  max-width: 700px;
+  margin: 5px auto;
+}
+.activity-list-item .drag-handle {
+  cursor: move;
+  font-size: 20px;
+  padding-right: 10px;
+}
+.activity-list-item .task-name {
+  flex: 1;
+  text-align: left;
+  font-weight: bold;
+}
+.activity-list-item button {
+  margin: 0 0 0 5px;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+}
+#activitiesContainer {
+  margin-bottom: 24px;
+}
+#buttonsContainer {
+  margin-bottom: 16px;
+}
+#buttonsContainer button {
+  font-size: 13.3333px;
+  margin: 0px;
+}
+.popup-window {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  padding: 20px;
+  z-index: 1000;
+  border-radius: 8px;
+  text-align: left;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.popup-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+.popup-window .row {
+  margin-bottom: 15px;
+  text-align: left;
+}
+.popup-window .row label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+.popup-window .row input[type="text"] {
+  width: calc(100% - 18px);
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+}
+.popup-window .row .importance-slider {
+  width: 100%;
+}
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  display: inline-block;
+  margin: 5px 2px;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 12px;
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  border-radius: 50%;
+  transition: .4s;
+  background-color: white;
+}
+input:checked + .slider:before {
+  transform: translateX(16px);
+}
+.emoji-label {
+  font-size: 20px;
+  margin-right: 10px;
+}
+.toggle-container {
+  display: block;
+  margin-bottom: 15px;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+}
+.toggle-text {
+  margin-left: 10px;
+}
+.save-exit-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.save-exit-group button, #tutorialModal button {
+  font-size: 14px;
+  width: 48%;
+}
+.advanced-options-btn {
+  display: block;
+  margin: 15px auto;
+  padding: 8px 15px;
+  font-size: 13.3333px;
+}
+.confirmation-dialog {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  z-index: 1000;
+  border-radius: 8px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.confirmation-dialog button {
+  margin: 10px;
+  font-size: 14px;
+}
+
+/* Colors */
+.green, input:checked + .slider {
+  background-color: #4CAF50;
+  color: white;
+}
+.red {
+  background-color: #f44336;
+  color: white;
+}
+.yellow {
+  background-color: #f0ad4e;
+}
+.blue {
+  background-color: #007bff;
+  color: white;
+}
+.purple {
+  background-color: #8A2BE2;
+  color: white;
+}
+.gold {
+  background-color: #FFD700;
+}
+.red2 {
+  background-color: #FF4500;
+  color: white;
+}
+.limegreen {
+  background-color: #32CD32;
+}
+.skyblue {
+  background-color: #87CEEB;
+}
+.hotpink {
+  background-color: #FF69B4;
+}
+
+/* Original Theme */
+.original {
+  background-color: white;
+  color: black;
+}
+.original .activity-list-item {
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+}
+.original .popup-window, .original.theme .confirmation-dialog {
+  background-color: white;
+  border: 1px solid #ccc;
+}
+.original .two-list a {
   color: #4a90e2;
   background-color: #fff;
   border: 1px solid #ddd;
 }
-.two-list a:hover {
+.original .two-list a:hover {
   background-color: #4a90e2;
   color: #fff;
 }
-/* Individual Button Colors */
-#filters button.default-btn {
-  background-color: #FFD700; /* Gold */
+
+/* Dark Theme */
+.dark {
+  background-color: #0f0f0f;
+  color: white;
+}
+.dark .activity-list-item {
+  background-color: #1f1f1f;
+  border: 1px solid #ccc;
+}
+.dark .popup-window, .dark .confirmation-dialog {
+  background-color: #1f1f1f;
+  border: 1px solid #ccc;
+}
+.dark .two-list a {
+  color: #4a90e2;
+  background-color: #1f1f1f;
+  border: 1px solid #222;
+}
+.dark .two-list a:hover {
+  background-color: #4a90e2;
+  color: #1f1f1f;
 }
 
-#filters button.high-priority-btn {
-  background-color: #FF4500; /* OrangeRed */
-  color:white;
+/* Digital Theme */
+.digital {
+  background-color: #0f0f0f;
+  color: #00ffcc;
 }
-
-#filters button.low-priority-btn {
-  background-color: #32CD32; /* LimeGreen */
+.digital button {
+  background-color: #00a887;
+  border: none;
+  color: white;
 }
-
-#filters button.lazy-btn {
-  background-color: #87CEEB; /* SkyBlue */
+.digital select, .digital input[type="text"] {
+  background-color: #1f1f1f;
+  color: #00ffcc;
+  border: 1px solid #00ffcc;
 }
-
-#filters button.short-btn {
-  background-color: #FF69B4; /* HotPink */
+.digital .activity-list-item {
+  border: 1px solid #00ffcc;
+  background-color: #1f1f1f;
 }
-
-#filters button.mobile-friendly-btn {
-  background-color: #8A2BE2; /* BlueViolet */
-  color:white;
+.digital .red {
+  background-color: #ff4b4b; /* Soft red/pink for the cancel button */
+  color: white;
+}
+.digital .popup-window {
+  background-color: #1f1f1f;
+  border: 1px solid #00ffcc;
+}
+.digital .slider {
+  background-color: #333;
+}
+.digital .slider:before {
+  background-color: #00ffcc;
+}
+.digital input:checked + .slider {
+  background-color: #005f5f;
+}
+.digital .confirmation-dialog {
+  background-color: #1f1f1f;
+  border: 1px solid #00ffcc;
+}
+.digital .two-list a {
+  color: #00ffcc;
+  background-color: #1f1f1f;
+  border: 1px solid #00ffcc;
+}
+.digital .two-list a:hover {
+  background-color: #00ffcc;
+  color: #1f1f1f;
 }

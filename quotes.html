@@ -4,16 +4,14 @@
     <meta charset="utf-8">
     <title>Get motivated.</title>
     <link id="themeStylesheet" href="css/style.css" rel="stylesheet" type="text/css" />
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        margin-top: 50px;
-      }
-    </style>
   </head>
   <body>
     <h1 id='quote'></h1>
+    <select id="themeSelector" onchange="changeTheme()">
+      <option value="original">Original Theme</option>
+      <option value="dark">Dark Theme</option>
+      <option value="digital">Digital Theme</option>
+    </select>
     <script src="script.js"></script>
     <script>
       //Lazy Quotes

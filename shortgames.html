@@ -4,34 +4,6 @@
     <meta charset="utf-8">
     <title>Random Activity Generator</title>
     <link id="themeStylesheet" href="css/style.css" rel="stylesheet" type="text/css" />
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        margin-top: 50px;
-      }
-      .two-list {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 15px; /* Add space between items */
-        margin: 20px 0;
-      }
-      .two-list a {
-        font-size: 20px;
-        text-decoration: none;
-        padding: 10px 20px;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
-        flex: 1; /* Make links flexible */
-        min-width: 150px; /* Ensure a minimum width to prevent crowding */
-        text-align: center;
-      }
-      .two-list a:hover {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      }
-    </style>
   </head>
   <body class="theme3">
     <h1>Here are some short games.</h1>
@@ -44,8 +16,9 @@
       <a href="https://sudoku.com/easy">Sudoku (Easy)</a>
     </div>
     <select id="themeSelector" onchange="changeTheme()">
-      <option value="css/style.css">Original Theme</option>
-      <option value="css/digital.css">Digital Theme</option>
+      <option value="original">Original Theme</option>
+      <option value="dark">Dark Theme</option>
+      <option value="digital">Digital Theme</option>
     </select>
     <script src="script.js"></script>
     <script>

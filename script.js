@@ -25,12 +25,12 @@ function getActivities() {
 
 function changeTheme() {
   const theme = document.getElementById("themeSelector").value;
-  document.getElementById("themeStylesheet").href = theme;
+  document.body.className = theme;
   localStorage.setItem('theme', theme);
 }
 
 function loadTheme() {
-  const theme = localStorage.getItem('theme') || 'css/style.css';
-  document.getElementById("themeStylesheet").href = theme;
+  const theme = localStorage.getItem('theme') || 'original';
+  document.body.className = theme;
   document.getElementById("themeSelector").value = theme;
 }

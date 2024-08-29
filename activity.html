@@ -4,31 +4,18 @@
     <meta charset="utf-8">
     <title>Random Activity Generator</title>
     <link id="themeStylesheet" rel="stylesheet" href="css/style.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            margin: 5px;
-            border-radius: 4px;
-        }
-    </style>
 </head>
 <body>
     <h1 id="activity">Random Activity Generator</h1>
-    <button onclick="markAsCompleted()" class="activity-button">Mark as Completed</button>
-    <button onclick="skipTask()" class="skip-button">Skip Task</button>
+    <button onclick="markAsCompleted()" class="activity-button green">Mark as Completed</button>
+    <button onclick="skipTask()" class="skip-button red">Skip Task</button>
     <br>
-    <button onclick="location.href='manage.html'" class="manage-button">Manage Activities</button>
+    <button onclick="location.href='manage.html'" class="blue">Manage Activities</button>
     <br><br>
     <select id="themeSelector" onchange="changeTheme()">
-        <option value="css/style.css">Original Theme</option>
-        <option value="css/digital.css">Digital Theme</option>
+        <option value="original">Original Theme</option>
+        <option value="dark">Dark Theme</option>
+        <option value="digital">Digital Theme</option>
     </select>
 
     <script src="script.js"></script>

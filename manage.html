@@ -3,200 +3,24 @@
 <head>
     <title>Manage Activities</title>
     <link id="themeStylesheet" rel="stylesheet" href="css/style.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-        }
-        .activity-list-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px;
-            margin-bottom: 5px;
-            border-radius: 5px;
-            max-width: 700px;
-            margin: 5px auto;
-        }
-        .activity-list-item .drag-handle {
-            cursor: move;
-            font-size: 20px;
-            padding-right: 10px;
-        }
-        .activity-list-item .task-name {
-            flex: 1;
-            text-align: left;
-            font-weight: bold;
-        }
-        .activity-list-item button {
-            margin-left: 5px;
-            padding: 5px 10px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-        }
-        .activity-button, .tutorial-button, .main-page-button, .cancel-button {
-            border-radius:4px;
-            padding:10px 20px;
-            cursor: pointer;
-        }
-        #activitiesContainer {
-            margin-bottom: 24px;
-        }
-        #buttonsContainer {
-            margin-bottom: 16px;
-        }
-        .popup-window {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 320px;
-            padding: 20px;
-            z-index: 1000;
-            border-radius: 8px;
-            text-align: left;
-        }
-        .popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-        }
-        .popup-window .row {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        .popup-window .row label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .popup-window .row input[type="text"] {
-            width: calc(100% - 18px);
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .popup-window .row .importance-slider {
-            width: 100%;
-        }
-        .toggle-switch {
-            position: relative;
-            width: 40px;
-            height: 24px;
-            display: inline-block;
-            margin: 5px 2px;
-        }
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 12px;
-            transition: .4s;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            border-radius: 50%;
-            transition: .4s;
-        }
-        input:checked + .slider:before {
-            transform: translateX(16px);
-        }
-        .emoji-label {
-            font-size: 20px;
-            margin-right: 10px;
-        }
-        .toggle-container {
-            display: block;
-            margin-bottom: 15px;
-        }
-        .toggle-row {
-            display: flex;
-            align-items: center;
-        }
-        .toggle-text {
-            margin-left: 10px;
-        }
-        .save-exit-group {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-        .save-exit-group button, #tutorialModal button {
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 14px;
-            border: none;
-            border-radius: 4px;
-            width: 48%;
-        }
-        .advanced-options-btn {
-            display: block;
-            margin: 15px auto;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .confirmation-dialog {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            z-index: 1000;
-            border-radius: 8px;
-            width: 300px;
-            text-align: center;
-        }
-        .confirmation-dialog button {
-            padding: 10px 20px;
-            margin: 10px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-        }
-    </style>
 </head>
 <body>
     <h1>Manage Activities</h1>
 
     <div id="activitiesContainer"></div>
     <div id="buttonsContainer">
-        <button onclick="addActivity()" class="activity-button">Add Activity</button>
-        <button onclick="showTutorial()" class="tutorial-button">Tutorial</button>
-        <button onclick="location.href='index.html'" class="main-page-button">Back to Main Page</button>
-        <button onclick="exportActivities()" class="cancel-button">Export Activities</button>
-        <button onclick="document.getElementById('importFileInput').click()" class="cancel-button">Import Activities</button>
+        <button onclick="addActivity()" class="green">Add Activity</button>
+        <button onclick="showTutorial()" class="purple">Tutorial</button>
+        <button onclick="location.href='index.html'" class="blue">Back to Main Page</button>
+        <button onclick="exportActivities()">Export Activities</button>
+        <button onclick="document.getElementById('importFileInput').click()">Import Activities</button>
         <input type="file" id="importFileInput" style="display: none;" onchange="importActivities(event)">
     </div>
     
     <select id="themeSelector" onchange="changeTheme()">
-        <option value="css/style.css">Original Theme</option>
-        <option value="css/digital.css">Digital Theme</option>
+        <option value="original">Original Theme</option>
+        <option value="dark">Dark Theme</option>
+        <option value="digital">Digital Theme</option>
     </select>
 
     <!-- Tutorial Modal -->
@@ -206,9 +30,8 @@
         <p>2. Enter the task details in the popup window.</p>
         <p>3. If needed, click on "Advanced Options" to provide additional details like a link or importance level.</p>
         <p>4. Click "Save" to add the task to your list.</p>
-        <button onclick="closeTutorial()" class="exit-button">Close</button>
+        <button onclick="closeTutorial()" class="red">Close</button>
     </div>
-    <div id="tutorialOverlay" class="popup-overlay" style="display: none;"></div>
 
     <!-- Pop-up Window and Overlay -->
     <div id="popupOverlay" class="popup-overlay"></div>
@@ -265,19 +88,19 @@
                 </div>
             </div>
         </div>
-        <button class="advanced-options-btn" onclick="toggleAdvancedOptions()">Advanced Options</button>
+        <button class="advanced-options-btn blue" onclick="toggleAdvancedOptions()">Advanced Options</button>
 
         <div class="save-exit-group">
-            <button id="saveButton" class="save-button" onclick="saveChanges()">Save</button>
-            <button id="exitButton" class="exit-button" onclick="closePopup()">Cancel</button>
+            <button id="saveButton" class="green" onclick="saveChanges()">Save</button>
+            <button id="exitButton" class="red" onclick="closePopup()">Cancel</button>
         </div>
     </div>
 
     <!-- Confirmation Dialog -->
     <div id="confirmationDialog" class="confirmation-dialog">
         <p id="confirmationText">Are you sure?</p>
-        <button id="confirmButton" class="confirm-button" onclick="confirmAction()">Confirm</button>
-        <button id="cancelButton" class="cancel-button" onclick="cancelAction()">Cancel</button>
+        <button id="confirmButton" class="red" onclick="confirmAction()">Confirm</button>
+        <button id="cancelButton" onclick="cancelAction()">Cancel</button>
     </div>
 
     <script src="manage.js"></script>

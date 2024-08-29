@@ -4,39 +4,23 @@
   <meta charset="utf-8">
   <title>Random Activity Generator</title>
   <link id="themeStylesheet" rel="stylesheet" href="css/style.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 50px;
-    }
-    #filters button {
-      border: none;
-      color: black;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 5px;
-      border-radius: 4px;
-      text-align: center;
-    }
-  </style>
 </head>
 <body>
   <h1>Random Activity Generator</h1>
   <p>Select how you want to filter your activities:</p>
   <div id="filters">
-    <button class="default-btn" onclick="applyFilter('default')">No Filter</button>
-    <button class="short-btn" onclick="applyFilter('short')">Short Only</button>
-    <button class="lazy-btn" onclick="applyFilter('lazy')">Lazy Only</button>
-    <button class="low-priority-btn" onclick="applyFilter('lowPriority')">Low-Priority</button>
-    <button class="high-priority-btn" onclick="applyFilter('highPriority')">High-Priority</button>
-    <button class="mobile-friendly-btn" onclick="applyFilter('mobile')">Mobile-Friendly</button>
+    <button class="gold" onclick="applyFilter('default')">No Filter</button>
+    <button class="hotpink" onclick="applyFilter('short')">Short Only</button>
+    <button class="skyblue" onclick="applyFilter('lazy')">Lazy Only</button>
+    <button class="limegreen" onclick="applyFilter('lowPriority')">Low-Priority</button>
+    <button class="red2" onclick="applyFilter('highPriority')">High-Priority</button>
+    <button class="purple" onclick="applyFilter('mobile')">Mobile-Friendly</button>
   </div>
   <br>
   <select id="themeSelector" onchange="changeTheme()">
-    <option value="css/style.css">Original Theme</option>
-    <option value="css/digital.css">Digital Theme</option>
+    <option value="original">Original Theme</option>
+    <option value="dark">Dark Theme</option>
+    <option value="digital">Digital Theme</option>
   </select>
   
   <script src="script.js"></script>

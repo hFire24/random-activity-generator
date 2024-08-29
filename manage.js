@@ -12,15 +12,15 @@ function renderActivities() {
     activityDiv.innerHTML = `
             <span class="drag-handle">☰</span>
             <span class="task-name">${activity.text}</span>
-            <button class="edit" onclick="openPopup(${index})">Edit</button>
+            <button class="green" onclick="openPopup(${index})">Edit</button>
             ${
               activity.archived
                 ? `
-                <button class="unarchive" onclick="unarchiveActivity(${index})">Unarchive</button>
-                <button class="delete" onclick="confirmDelete(${index})">Delete</button>
+                <button class="blue" onclick="unarchiveActivity(${index})">Unarchive</button>
+                <button class="red" onclick="confirmDelete(${index})">Delete</button>
             `
                 : `
-                <button class="archive" onclick="confirmArchive(${index})">Archive</button>
+                <button class="red" onclick="confirmArchive(${index})">Archive</button>
             `
             }
         `;
@@ -166,6 +166,7 @@ function confirmDelete(index) {
 function showConfirmationDialog(message) {
   document.getElementById("confirmationText").innerText = message;
   document.getElementById("confirmationDialog").style.display = "block";
+  document.getElementById("popupOverlay").style.display = "block";
 }
 
 function confirmAction() {
@@ -191,6 +192,7 @@ function cancelAction() {
 
 function closeConfirmationDialog() {
   document.getElementById("confirmationDialog").style.display = "none";
+  document.getElementById("popupOverlay").style.display = "none";
   currentAction = null;
 }
 
@@ -249,12 +251,12 @@ window.onload = function () {
 
 function showTutorial() {
   document.getElementById("tutorialModal").style.display = "block";
-  document.getElementById("tutorialOverlay").style.display = "block";
+  document.getElementById("popupOverlay").style.display = "block";
 }
 
 function closeTutorial() {
   document.getElementById("tutorialModal").style.display = "none";
-  document.getElementById("tutorialOverlay").style.display = "none";
+  document.getElementById("popupOverlay").style.display = "none";
 }
 
 function exportActivities() {
