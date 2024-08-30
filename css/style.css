@@ -78,7 +78,7 @@ select {
 }
 #buttonsContainer button {
   font-size: 13.3333px;
-  margin: 0px;
+  margin: 5px 0 0 0;
 }
 .popup-window {
   display: none;
