@@ -265,6 +265,9 @@ input:checked + .slider:before {
   background-color: #4a90e2;
   color: #fff;
 }
+.original .slider {
+  background-color: #ccc;
+}
 
 /* Dark Theme */
 .dark {
@@ -287,6 +290,9 @@ input:checked + .slider:before {
 .dark .two-list a:hover {
   background-color: #4a90e2;
   color: #1f1f1f;
+}
+.dark .slider {
+  background-color: #333;
 }
 
 /* Digital Theme */
