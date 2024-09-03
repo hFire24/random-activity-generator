@@ -94,11 +94,16 @@
 
         <div class="save-exit-group">
             <button id="saveButton" class="green" onclick="saveChanges()">Save</button>
-            <button id="exitButton" class="red" onclick="closePopup()">Cancel</button>
+            <button id="duplicateButton" class="blue" onclick="duplicateActivity()">Duplicate</button>
+            <button id="archiveButton" class="yellow" onclick="confirmArchive()">Archive</button>
+            <button id="unarchiveButton" class="yellow" onclick="unarchiveActivity()">Unarchive</button>
+            <button id="deleteButton" class="red" onclick="confirmDelete()">Delete</button>
+            <button id="exitButton" onclick="closePopup()">Cancel</button>
         </div>
     </div>
 
     <!-- Confirmation Dialog -->
+    <div id="confirmationOverlay" class="popup-overlay"></div>
     <div id="confirmationDialog" class="confirmation-dialog">
         <p id="confirmationText">Are you sure?</p>
         <button id="confirmButton" class="red" onclick="confirmAction()">Confirm</button>

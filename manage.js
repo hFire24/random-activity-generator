@@ -9,22 +9,16 @@ function renderActivities() {
   activities.forEach((activity, index) => {
     const activityDiv = document.createElement("div");
     activityDiv.className = "activity-list-item";
-    activityDiv.innerHTML = `
+    if(activity.archived)
+      activityDiv.innerHTML = `
+            <span class="drag-handle">☰</span>
+            <span class="task-name"><s>${activity.text}</s></span>
+            <button class="green" onclick="openPopup(${index})">Edit</button>`;
+    else
+      activityDiv.innerHTML = `
             <span class="drag-handle">☰</span>
             <span class="task-name">${activity.text}</span>
-            <button class="green" onclick="openPopup(${index})">Edit</button>
-            ${
-              activity.archived
-                ? `
-                <button class="blue" onclick="unarchiveActivity(${index})">Unarchive</button>
-                <button class="red" onclick="confirmDelete(${index})">Delete</button>
-            `
-                : `
-                <button class="blue" onclick="duplicateActivity(${index})">Duplicate</button>
-                <button class="red" onclick="confirmArchive(${index})">Archive</button>
-            `
-            }
-        `;
+            <button class="green" onclick="openPopup(${index})">Edit</button>`;
     activitiesContainer.appendChild(activityDiv);
   });
 
@@ -85,6 +79,7 @@ function openPopup(index) {
     document.getElementById("popupActiveTask").checked = false;
     document.getElementById("popupLongTask").checked = false;
     document.getElementById("popupMobileFriendlyTask").checked = false;
+    showButtons("new");
   } else {
     document.getElementById("popupText").value = activity.text;
     document.getElementById("popupLink").value = activity.link || "";
@@ -96,6 +91,7 @@ function openPopup(index) {
     document.getElementById("popupLongTask").checked = activity.longTask;
     document.getElementById("popupMobileFriendlyTask").checked =
       activity.mobileFriendlyTask;
+    activity.archived ? showButtons("archive") : showButtons("active");
   }
 
   updateImportance("popupImportance", "importanceLabel");
@@ -112,6 +108,29 @@ function closePopup() {
   document.getElementById("popupOverlay").style.display = "none";
   document.getElementById("popupWindow").style.display = "none";
   currentEditIndex = null;
+}
+
+function showButtons(type) {
+  switch(type) {
+    case "new":
+      document.getElementById("duplicateButton").style.display = "none";
+      document.getElementById("archiveButton").style.display = "none";
+      document.getElementById("unarchiveButton").style.display = "none";
+      document.getElementById("deleteButton").style.display = "none";
+      break;
+    case "archive":
+      document.getElementById("duplicateButton").style.display = "block";
+      document.getElementById("archiveButton").style.display = "none";
+      document.getElementById("unarchiveButton").style.display = "block";
+      document.getElementById("deleteButton").style.display = "block";
+      break;
+    case "active":
+      document.getElementById("duplicateButton").style.display = "block";
+      document.getElementById("archiveButton").style.display = "block";
+      document.getElementById("unarchiveButton").style.display = "none";
+      document.getElementById("deleteButton").style.display = "block";
+      break;
+  }
 }
 
 function saveChanges() {
@@ -154,36 +173,35 @@ function saveChanges() {
   renderActivities();
 }
 
-function confirmArchive(index) {
-  currentAction = { type: "archive", index };
+function confirmArchive() {
+  currentAction = { type: "archive", currentEditIndex };
   showConfirmationDialog("Are you sure you want to archive this task?");
 }
 
-function confirmDelete(index) {
-  currentAction = { type: "delete", index };
+function confirmDelete() {
+  currentAction = { type: "delete", currentEditIndex };
   showConfirmationDialog("Are you sure you want to delete this task?");
 }
 
 function showConfirmationDialog(message) {
   document.getElementById("confirmationText").innerText = message;
   document.getElementById("confirmationDialog").style.display = "block";
-  document.getElementById("popupOverlay").style.display = "block";
+  document.getElementById("confirmationOverlay").style.display = "block";
 }
 
 function confirmAction() {
   const activities = getActivities();
 
   if (currentAction.type === "archive") {
-    activities[currentAction.index].archived = true;
+    activities[currentAction.currentEditIndex].archived = true;
   } else if (
-    currentAction.type === "delete" &&
-    activities[currentAction.index].archived
-  ) {
-    activities.splice(currentAction.index, 1);
+    currentAction.type === "delete") {
+    activities.splice(currentAction.currentEditIndex, 1);
   }
 
   localStorage.setItem("activities", JSON.stringify(activities));
   closeConfirmationDialog();
+  closePopup();
   renderActivities();
 }
 
@@ -193,30 +211,37 @@ function cancelAction() {
 
 function closeConfirmationDialog() {
   document.getElementById("confirmationDialog").style.display = "none";
-  document.getElementById("popupOverlay").style.display = "none";
+  document.getElementById("confirmationOverlay").style.display = "none";
   currentAction = null;
 }
 
-function duplicateActivity(index) {
+function duplicateActivity() {
   const activities = getActivities();
-  const activityToDuplicate = activities[index];
-  const duplicatedActivity = {
-    ...activityToDuplicate,
-    timesCompleted: 0,
-    timesSkipped: 0,
-    timesSkippedConsecutively: 0,
-    dateCreated: new Date().toISOString(),  // Optionally reset the creation date
-  };
-  activities.splice(index + 1, 0, duplicatedActivity);
-  // Create a new activity and insert
-  localStorage.setItem("activities", JSON.stringify(activities));
-  renderActivities();
+  if(currentEditIndex !== null) {
+    const activityToDuplicate = activities[currentEditIndex];
+    const duplicatedActivity = {
+      ...activityToDuplicate,
+      text: activityToDuplicate.text + " copy",
+      timesCompleted: 0,
+      timesSkipped: 0,
+      timesSkippedConsecutively: 0,
+      dateCreated: new Date().toISOString(),  // Optionally reset the creation date
+    };
+    let newEditIndex = currentEditIndex + 1;
+    activities.splice(newEditIndex, 0, duplicatedActivity);
+    // Create a new activity and insert
+    localStorage.setItem("activities", JSON.stringify(activities));
+    closePopup();
+    renderActivities();
+    openPopup(newEditIndex);
+  }
 }
 
-function unarchiveActivity(index) {
+function unarchiveActivity() {
   const activities = getActivities();
-  activities[index].archived = false;
+  activities[currentEditIndex].archived = false;
   localStorage.setItem("activities", JSON.stringify(activities));
+  closePopup();
   renderActivities();
 }
 

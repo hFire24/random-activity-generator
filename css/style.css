@@ -49,7 +49,7 @@ select {
   padding: 10px;
   margin-bottom: 5px;
   border-radius: 5px;
-  max-width: 800px;
+  max-width: 700px;
   margin: 5px auto;
 }
 .activity-list-item .drag-handle {
@@ -87,11 +87,14 @@ select {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 480px;
+  max-width: 90%;  /* Reduce the width for smaller screens */
+  max-height: 80vh; /* Limit the height to fit smaller screens */
   padding: 20px;
-  z-index: 1000;
+  z-index: 3;
   border-radius: 8px;
   text-align: left;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto; /* Enable scrolling if the content is too tall */
 }
 .popup-overlay {
   display: none;
@@ -101,7 +104,7 @@ select {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 2;
 }
 .popup-window .row {
   margin-bottom: 15px;
@@ -113,7 +116,8 @@ select {
   font-weight: bold;
 }
 .popup-window .row input[type="text"] {
-  width: calc(100% - 18px);
+  width: 100%; /* Make the input field fully responsive */
+  box-sizing: border-box; /* Include padding and border in the width */
   padding: 8px;
   border-radius: 4px;
   font-size: 14px;
@@ -121,6 +125,10 @@ select {
 }
 .popup-window .row .importance-slider {
   width: 100%;
+}
+.popup-window button {
+  padding: 8px 10px; /* Reduce padding */
+  font-size: 12px;   /* Reduce font size */
 }
 .toggle-switch {
   position: relative;
@@ -188,6 +196,9 @@ input:checked + .slider:before {
   padding: 8px 15px;
   font-size: 13.3333px;
 }
+#confirmationOverlay {
+  z-index: 4;
+}
 .confirmation-dialog {
   display: none;
   position: fixed;
@@ -195,7 +206,7 @@ input:checked + .slider:before {
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 20px;
-  z-index: 1000;
+  z-index: 5;
   border-radius: 8px;
   width: 300px;
   text-align: center;
@@ -252,7 +263,7 @@ input:checked + .slider:before {
   background-color: #f9f9f9;
   border: 1px solid #ccc;
 }
-.original .popup-window, .original.theme .confirmation-dialog {
+.original .popup-window, .original .confirmation-dialog {
   background-color: white;
   border: 1px solid #ccc;
 }
