@@ -20,6 +20,7 @@ function renderActivities() {
                 <button class="red" onclick="confirmDelete(${index})">Delete</button>
             `
                 : `
+                <button class="blue" onclick="duplicateActivity(${index})">Duplicate</button>
                 <button class="red" onclick="confirmArchive(${index})">Archive</button>
             `
             }
@@ -196,6 +197,22 @@ function closeConfirmationDialog() {
   currentAction = null;
 }
 
+function duplicateActivity(index) {
+  const activities = getActivities();
+  const activityToDuplicate = activities[index];
+  const duplicatedActivity = {
+    ...activityToDuplicate,
+    timesCompleted: 0,
+    timesSkipped: 0,
+    timesSkippedConsecutively: 0,
+    dateCreated: new Date().toISOString(),  // Optionally reset the creation date
+  };
+  activities.splice(index + 1, 0, duplicatedActivity);
+  // Create a new activity and insert
+  localStorage.setItem("activities", JSON.stringify(activities));
+  renderActivities();
+}
+
 function unarchiveActivity(index) {
   const activities = getActivities();
   activities[index].archived = false;
@@ -281,7 +298,7 @@ function importActivities(event) {
       try {
           const importedActivities = JSON.parse(event.target.result);
           if (Array.isArray(importedActivities)) {
-              const activities = getActivities().concat(importedActivities);
+              const activities = importedActivities;
               localStorage.setItem("activities", JSON.stringify(activities));
               renderActivities();
               alert("Activities imported successfully!");
