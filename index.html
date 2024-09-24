@@ -17,6 +17,7 @@
     <button class="red2" onclick="applyFilter('highPriority')">High-Priority</button>
     <button class="purple" onclick="applyFilter('mobile')">Mobile-Friendly</button>
   </div>
+  <button class="blue" onclick="openOptions()">Manage Tasks</button>
   <br>
   <select id="themeSelector" onchange="changeTheme()">
     <option value="original">Original Theme</option>
@@ -28,6 +29,10 @@
   <script>
     function applyFilter(selectedFilter) {
       window.location.href = `activity.html?filter=${selectedFilter}`;
+    }
+
+    function openOptions() {
+      window.location.href = 'manage.html';
     }
 
     window.onload = loadTheme;
