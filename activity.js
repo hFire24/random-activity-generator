@@ -3,6 +3,7 @@ let standingActivityPending = false;
 let currentActivity = null;
 let completedActivities = [];
 let skippedActivities = [];
+let customActivity = null;
 
 function saveActivity(updatedActivity) {
   const activities = getActivities();
@@ -22,7 +23,7 @@ function generateActivity() {
     (activity) => !isActivityInTemporaryArray(activity.text)
   );
 
-  if (activities.length === 0) {
+  if (activities.length === 0 && customActivity === null) {
     if (skippedActivities.length > 0) {
       activities = getActivities().filter((activity) =>
         skippedActivities.includes(activity.text)
@@ -42,7 +43,11 @@ function generateActivity() {
     );
     if (savedActivity) {
       currentActivity = savedActivity;
-    } else {
+    } else if (customActivity !== null) {
+      currentActivity = { text: customActivity, link: null, standingTask: false };
+      sessionStorage.setItem("currentActivity", currentActivity.text);
+    }
+    else {
       const previousActivityText = activityElement.innerHTML;
       let randomActivity;
       do {
@@ -100,14 +105,24 @@ function displayActivity(activity) {
 function markAsCompleted() {
   if (!currentActivity) return;
 
-  currentActivity.timesCompleted += 1;
-  currentActivity.timesSkippedConsecutively = 0;
+  if(customActivity === null) {
+    currentActivity.timesCompleted += 1;
+    currentActivity.timesSkippedConsecutively = 0;
 
-  // Add to completed activities array
-  completedActivities.push(currentActivity.text);
+    // Add to completed activities array
+    completedActivities.push(currentActivity.text);
 
-  // Save the activity back to localStorage
-  saveActivity(currentActivity);
+    // Save the activity back to localStorage
+    saveActivity(currentActivity);
+  }
+
+  if (confirm("Got something you need to do?")) {
+    customActivity = prompt("Type in the task you need to do.");
+    if(customActivity === "")
+      customActivity = null;
+  }
+  else
+    customActivity = null;
 
   // Load a new activity
   generateActivity();
@@ -116,14 +131,24 @@ function markAsCompleted() {
 function skipTask() {
   if (!currentActivity) return;
 
-  currentActivity.timesSkipped += 1;
-  currentActivity.timesSkippedConsecutively += 1;
+  if(customActivity === null) {
+    currentActivity.timesSkipped += 1;
+    currentActivity.timesSkippedConsecutively += 1;
 
-  // Add to skipped activities array
-  skippedActivities.push(currentActivity.text);
+    // Add to skipped activities array
+    skippedActivities.push(currentActivity.text);
 
-  // Save the activity back to localStorage
-  saveActivity(currentActivity);
+    // Save the activity back to localStorage
+    saveActivity(currentActivity);
+  }
+
+  if (confirm("Got something you need to do?")) {
+    customActivity = prompt("Type in the task you need to do.");
+    if(customActivity === "")
+      customActivity = null;
+  }
+  else
+    customActivity = null;
 
   // Load a new activity
   generateActivity();
