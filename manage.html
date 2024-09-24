@@ -48,8 +48,9 @@
                 <input type="text" id="popupLink" />
             </div>
             <div class="row">
-                <label for="popupCategory">Category</label>
-                <input type="text" id="popupCategory" />
+                <label for="popupCategoryDropdown">Category</label>
+                <select id="popupCategoryDropdown"></select>
+                <button onclick="openCategoryManager()">Manage Categories</button>
             </div>
             <div class="row">
                 <label for="popupImportance" id="importanceLabel">Importance (1)</label>
@@ -100,6 +101,16 @@
             <button id="deleteButton" class="red" onclick="confirmDelete()">Delete</button>
             <button id="exitButton" onclick="closePopup()">Cancel</button>
         </div>
+    </div>
+
+    <!-- Category Management Modal -->
+    <div id="categoryOverlay" class="popup-overlay"></div>
+    <div id="categoryModal" class="popup-window" style="display: none;">
+        <h2>Manage Categories</h2>
+        <div id="categoryList"></div>
+        <input type="text" id="newCategoryName" placeholder="New Category">
+        <button class="green" onclick="addCategory()">Add Category</button>
+        <button class="red" onclick="closeCategoryManager()">Close</button>
     </div>
 
     <!-- Confirmation Dialog -->

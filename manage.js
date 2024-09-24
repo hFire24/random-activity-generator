@@ -83,7 +83,6 @@ function openPopup(index) {
   } else {
     document.getElementById("popupText").value = activity.text;
     document.getElementById("popupLink").value = activity.link || "";
-    document.getElementById("popupCategory").value = activity.category || "";
     document.getElementById("popupImportance").value = activity.importance;
     document.getElementById("popupStandingTask").checked =
       activity.standingTask;
@@ -99,6 +98,26 @@ function openPopup(index) {
   updateLabel("popupActiveTask", "activeLabel", "🏃‍♂️", "😴");
   updateLabel("popupLongTask", "longLabel", "⏳", "⏱️");
   updateLabel("popupMobileFriendlyTask", "mobileLabel", "📱", "🏠");
+
+  // Populate category dropdown
+  const categories = getCategories();
+  const categoryDropdown = document.getElementById('popupCategoryDropdown');
+  categoryDropdown.innerHTML = ''; // Clear existing options
+
+  categories.forEach((category) => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    categoryDropdown.appendChild(option);
+  });
+
+  if (activity === undefined) {
+    document.getElementById("popupText").value = "";
+    categoryDropdown.value = 'None'; // None category
+  } else {
+    document.getElementById("popupText").value = activity.text;
+    categoryDropdown.value = activity.category || 'None';
+  }
 
   document.getElementById("popupOverlay").style.display = "block";
   document.getElementById("popupWindow").style.display = "block";
@@ -133,6 +152,68 @@ function showButtons(type) {
   }
 }
 
+function getCategories() {
+  let categories = JSON.parse(localStorage.getItem('categories'));
+  if (!categories) {
+      categories = ['None']; // A default category if none exist
+      localStorage.setItem('categories', JSON.stringify(categories));
+  }
+  return categories;
+}
+
+function saveCategories(categories) {
+  localStorage.setItem('categories', JSON.stringify(categories));
+}
+
+function openCategoryManager() {
+  const categories = getCategories();
+  const categoryList = document.getElementById('categoryList');
+  categoryList.innerHTML = ''; // Clear existing list
+
+  categories.forEach((category, index) => {
+    const categoryDiv = document.createElement('div');
+    categoryDiv.className = 'category-item';
+    categoryDiv.innerHTML = `
+      ${category} 
+      <button class="red" onclick="deleteCategory(${index})">Delete</button>
+    `;
+    categoryList.appendChild(categoryDiv);
+  });
+
+  document.getElementById('categoryModal').style.display = 'block';
+  document.getElementById('categoryOverlay').style.display = 'block';
+}
+
+function closeCategoryManager() {
+  document.getElementById('categoryModal').style.display = 'none';
+  document.getElementById('categoryOverlay').style.display = 'none';
+}
+
+function addCategory() {
+  const newCategoryName = document.getElementById('newCategoryName').value;
+  if (newCategoryName) {
+    const categories = getCategories();
+    if (!categories.includes(newCategoryName)) {
+      categories.push(newCategoryName);
+      saveCategories(categories);
+      openCategoryManager(); // Refresh the category list
+    } else {
+      alert('Category already exists.');
+    }
+  }
+}
+
+function deleteCategory(index) {
+  let categories = getCategories();
+  if (categories.length > 1) {
+    categories.splice(index, 1);
+    saveCategories(categories);
+    openCategoryManager(); // Refresh the category list
+  } else {
+    alert('At least one category must remain.');
+  }
+}
+
 function saveChanges() {
   const activities = getActivities();
 
@@ -141,7 +222,7 @@ function saveChanges() {
       ...activities[currentEditIndex],
       text: document.getElementById("popupText").value,
       link: document.getElementById("popupLink").value || null,
-      category: document.getElementById("popupCategory").value || null,
+      category: document.getElementById("popupCategoryDropdown").value || null,
       importance: parseInt(document.getElementById("popupImportance").value),
       standingTask: document.getElementById("popupStandingTask").checked,
       activeTask: document.getElementById("popupActiveTask").checked,
@@ -153,7 +234,7 @@ function saveChanges() {
     activities.push({
       text: document.getElementById("popupText").value,
       link: document.getElementById("popupLink").value || null,
-      category: document.getElementById("popupCategory").value || null,
+      category: document.getElementById("popupCategoryDropdown").value || null,
       importance: parseInt(document.getElementById("popupImportance").value),
       standingTask: document.getElementById("popupStandingTask").checked,
       activeTask: document.getElementById("popupActiveTask").checked,
@@ -320,19 +401,19 @@ function importActivities(event) {
   const reader = new FileReader();
 
   reader.onload = function(event) {
-      try {
-          const importedActivities = JSON.parse(event.target.result);
-          if (Array.isArray(importedActivities)) {
-              const activities = importedActivities;
-              localStorage.setItem("activities", JSON.stringify(activities));
-              renderActivities();
-              alert("Activities imported successfully!");
-          } else {
-              alert("Invalid file format.");
-          }
-      } catch (e) {
-          alert("Error reading file: " + e.message);
+    try {
+      const importedActivities = JSON.parse(event.target.result);
+      if (Array.isArray(importedActivities)) {
+        const activities = importedActivities;
+        localStorage.setItem("activities", JSON.stringify(activities));
+        renderActivities();
+        alert("Activities imported successfully!");
+      } else {
+        alert("Invalid file format.");
       }
+    } catch (e) {
+      alert("Error reading file: " + e.message);
+    }
   };
 
   reader.readAsText(file);
