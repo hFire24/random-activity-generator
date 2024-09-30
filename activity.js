@@ -118,7 +118,7 @@ function markAsCompleted() {
 
   if (confirm("Got something you need to do?")) {
     customActivity = prompt("Type in the task you need to do.");
-    if(customActivity === "")
+    if(filtered(customActivity))
       customActivity = null;
   }
   else
@@ -144,7 +144,7 @@ function skipTask() {
 
   if (confirm("Got something you need to do?")) {
     customActivity = prompt("Type in the task you need to do.");
-    if(customActivity === "")
+    if(filtered(customActivity))
       customActivity = null;
   }
   else
@@ -152,6 +152,32 @@ function skipTask() {
 
   // Load a new activity
   generateActivity();
+}
+
+function filtered(customActivity) {
+  let rValue = true;
+  let newBreakLC = customActivity.toLowerCase();
+  
+  // Assuming secretArray is loaded from privateData.js
+  if (foundInSecretArray(newBreakLC) || newBreakLC.endsWith(" rem")) {
+    alert("That should not be a priority.");
+  } else if (found(['bored', 'bore', 'lazy', 'nothing', 'don\'t feel like doing', 'uhh', 'umm', 'hmm',
+    'lack of interest', 'don\'t know', 'don’t know', 'dunno', 'no idea', 'no reason', 'idk'], newBreakLC)
+    || customActivity.length === 0) {
+    rValue = true;
+  } else {
+    rValue = false;
+  }
+  return rValue;
+}
+
+function found(array, value) {
+  return array.some(item => value.includes(item));
+}
+
+function foundInSecretArray(value) {
+  let secretArray = JSON.parse(localStorage.getItem('secretArray'));
+  return secretArray.some(item => value.includes(item));
 }
 
 function isActivityInTemporaryArray(activityText) {
