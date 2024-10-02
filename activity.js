@@ -6,6 +6,31 @@ let skippedActivities = [];
 let wipedCategories = JSON.parse(localStorage.getItem('wipes')) || [];
 let timesSkippedConsecutively = 0;
 let customActivity = null;
+let bedtimeEnabled = true;
+let sleep = 22;
+let wake = 6;
+
+if(isBedtime(sleep, wake - 1) && bedtimeEnabled) {
+  activities.push({
+    text: "Wear your pajamas and go to bed.",
+    link: null,
+    category: "sleep",
+    importance: 3,
+    standingTask: true,
+    activeTask: false,
+    longTask: false,
+    mobileFriendlyTask: true,
+    timesCompleted: 0,
+    timesSkipped: 0,
+    dateCreated: new Date().toISOString(),
+    archived: false
+  });
+}
+
+function isBedtime(sleep, wake) {
+  const d = new Date();
+  return (sleep > wake) ? (d.getHours() < wake || d.getHours() >= sleep) : (d.getHours >= sleep && d.getHours() < wake);
+}
 
 function saveActivity(updatedActivity) {
   const activities = getActivities();
@@ -61,6 +86,9 @@ function generateActivity() {
         randomActivity.text === previousActivityText &&
         activities.length > 1
       );
+      // There is at least a 1 in 4 chance of the sleep message appearing at bedtime.
+      if(isBedtime(sleep, wake - 1) && !Math.floor(Math.random() * 4) && activities[activities.length - 1].category === "sleep")
+        randomActivity = activities[activities.length - 1];
       currentActivity = randomActivity;
       sessionStorage.setItem("currentActivity", currentActivity.text);
     }
@@ -109,7 +137,7 @@ function displayActivity(activity) {
 function markAsCompleted() {
   if (!currentActivity) return;
 
-  if (customActivity === null && !completedActivities.includes(currentActivity.text)) {
+  if (customActivity === null && !completedActivities.includes(currentActivity.text) && currentActivity.category !== "sleep") {
     currentActivity.timesCompleted += 1;
     timesSkippedConsecutively = 0;
 
@@ -123,6 +151,8 @@ function markAsCompleted() {
     if (wipedCategories.includes(currentActivity.category)) {
       handleWipedCategory(currentActivity.category, true);
     }
+  } else if(currentActivity.category === "sleep") {
+    activities.pop();
   }
 
   // Ask for a custom activity if needed
@@ -140,7 +170,7 @@ function markAsCompleted() {
 function skipTask() {
   if (!currentActivity) return;
 
-  if (customActivity === null && !skippedActivities.includes(currentActivity.text)) {
+  if (customActivity === null && !skippedActivities.includes(currentActivity.text) && currentActivity.category !== "sleep") {
     currentActivity.timesSkipped += 1;
     timesSkippedConsecutively += 1;
 
@@ -154,6 +184,8 @@ function skipTask() {
     if (wipedCategories.includes(currentActivity.category)) {
       handleWipedCategory(currentActivity.category, false);
     }
+  } else if(currentActivity.category === "sleep") {
+    activities.pop();
   }
 
   // Ask for a custom activity if needed
