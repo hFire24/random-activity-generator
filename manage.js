@@ -73,7 +73,7 @@ function openPopup(index) {
   if (activity === undefined) {
     document.getElementById("popupText").value = "";
     document.getElementById("popupLink").value = "";
-    document.getElementById("popupCategory").value = "";
+    document.getElementById("popupCategoryDropdown").value = "";
     document.getElementById("popupImportance").value = 1;
     document.getElementById("popupStandingTask").checked = false;
     document.getElementById("popupActiveTask").checked = false;
