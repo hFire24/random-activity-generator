@@ -165,18 +165,61 @@ function saveCategories(categories) {
   localStorage.setItem('categories', JSON.stringify(categories));
 }
 
+function getWipes() {
+  let wipes = JSON.parse(localStorage.getItem('wipes'));
+  if(!wipes)
+    return [];
+  return wipes;
+}
+
 function openCategoryManager() {
   const categories = getCategories();
+  const wipes = getWipes();
   const categoryList = document.getElementById('categoryList');
   categoryList.innerHTML = ''; // Clear existing list
 
   categories.forEach((category, index) => {
     const categoryDiv = document.createElement('div');
     categoryDiv.className = 'category-item';
-    categoryDiv.innerHTML = `
-      ${category} 
-      <button class="red" onclick="deleteCategory(${index})">Delete</button>
-    `;
+
+    const categoryName = document.createElement('span');
+    categoryName.innerHTML = category;
+
+    const categoryButton = document.createElement('button');
+    categoryButton.className = "red";
+    categoryButton.addEventListener('click', function () {
+      if(confirm(`Are you sure you want to delete the ${category} category?`)) {
+        let wipes = getWipes();
+        wipes = wipes.filter(item => item !== category);
+        localStorage.setItem("wipes",JSON.stringify(wipes));
+        deleteCategory(index);
+      }
+    });
+    categoryButton.innerHTML = "Delete";
+
+    const lineBreak = document.createElement('br');
+
+    const span = document.createElement('span');
+    span.innerHTML = `Remove ${category} Tasks on Skip/Complete`;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = wipes.includes(category);
+    checkbox.addEventListener('change', function () { toggleCategoryWipe(category, checkbox.checked) });
+
+    const hr = document.createElement('hr');
+
+    categoryDiv.appendChild(categoryName);
+
+    if(category !== "None") {
+      categoryDiv.appendChild(categoryButton);
+      categoryDiv.appendChild(lineBreak);
+      categoryDiv.appendChild(span);
+      categoryDiv.appendChild(checkbox);
+    }
+
+    categoryDiv.appendChild(hr);
+
     categoryList.appendChild(categoryDiv);
   });
 
@@ -205,13 +248,40 @@ function addCategory() {
 
 function deleteCategory(index) {
   let categories = getCategories();
+  const deletedCategory = categories[index];
+
+  // Ensure that at least one category remains
   if (categories.length > 1) {
+    // Remove the category from the list
     categories.splice(index, 1);
     saveCategories(categories);
-    openCategoryManager(); // Refresh the category list
+
+    // Now update any activities that had the deleted category
+    let activities = getActivities();
+    activities = activities.map(activity => {
+      if (activity.category === deletedCategory) {
+        activity.category = "None"; // Switch category to "None"
+      }
+      return activity;
+    });
+
+    // Save updated activities to local storage
+    localStorage.setItem("activities", JSON.stringify(activities));
+
+    // Refresh the category list
+    openCategoryManager();
   } else {
     alert('At least one category must remain.');
   }
+}
+
+
+function toggleCategoryWipe(category, isWiped) {
+  let wipes = getWipes();
+  if(!wipes)
+    wipes = [];
+  (isWiped && !wipes.includes(category)) ? wipes.push(category) : wipes = wipes.filter(item => item !== category);
+  localStorage.setItem("wipes",JSON.stringify(wipes));
 }
 
 function saveChanges() {
@@ -243,7 +313,6 @@ function saveChanges() {
         .checked,
       timesCompleted: 0,
       timesSkipped: 0,
-      timesSkippedConsecutively: 0,
       dateCreated: new Date().toISOString(),
       archived: false,
     });
@@ -305,7 +374,6 @@ function duplicateActivity() {
       text: activityToDuplicate.text + " copy",
       timesCompleted: 0,
       timesSkipped: 0,
-      timesSkippedConsecutively: 0,
       dateCreated: new Date().toISOString(),  // Optionally reset the creation date
     };
     let newEditIndex = currentEditIndex + 1;

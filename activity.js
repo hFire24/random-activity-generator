@@ -3,6 +3,8 @@ let standingActivityPending = false;
 let currentActivity = null;
 let completedActivities = [];
 let skippedActivities = [];
+let wipedCategories = JSON.parse(localStorage.getItem('wipes')) || [];
+let timesSkippedConsecutively = 0;
 let customActivity = null;
 
 function saveActivity(updatedActivity) {
@@ -22,6 +24,8 @@ function generateActivity() {
   activities = activities.filter(
     (activity) => !isActivityInTemporaryArray(activity.text)
   );
+
+  console.log(activities.length);
 
   if (activities.length === 0 && customActivity === null) {
     if (skippedActivities.length > 0) {
@@ -105,24 +109,29 @@ function displayActivity(activity) {
 function markAsCompleted() {
   if (!currentActivity) return;
 
-  if(customActivity === null) {
+  if (customActivity === null && !completedActivities.includes(currentActivity.text)) {
     currentActivity.timesCompleted += 1;
-    currentActivity.timesSkippedConsecutively = 0;
+    timesSkippedConsecutively = 0;
 
     // Add to completed activities array
     completedActivities.push(currentActivity.text);
 
     // Save the activity back to localStorage
     saveActivity(currentActivity);
+
+    // If the current activity category is wiped, handle all activities in that category
+    if (wipedCategories.includes(currentActivity.category)) {
+      handleWipedCategory(currentActivity.category, true);
+    }
   }
 
+  // Ask for a custom activity if needed
   if (confirm("Got something you need to do?")) {
     customActivity = prompt("Type in the task you need to do.");
-    if(filtered(customActivity))
-      customActivity = null;
-  }
-  else
+    if (filtered(customActivity)) customActivity = null;
+  } else {
     customActivity = null;
+  }
 
   // Load a new activity
   generateActivity();
@@ -131,27 +140,50 @@ function markAsCompleted() {
 function skipTask() {
   if (!currentActivity) return;
 
-  if(customActivity === null) {
+  if (customActivity === null && !skippedActivities.includes(currentActivity.text)) {
     currentActivity.timesSkipped += 1;
-    currentActivity.timesSkippedConsecutively += 1;
+    timesSkippedConsecutively += 1;
 
     // Add to skipped activities array
     skippedActivities.push(currentActivity.text);
 
     // Save the activity back to localStorage
     saveActivity(currentActivity);
+
+    // If the current activity category is wiped, handle all activities in that category
+    if (wipedCategories.includes(currentActivity.category)) {
+      handleWipedCategory(currentActivity.category, false);
+    }
   }
 
+  // Ask for a custom activity if needed
   if (confirm("Got something you need to do?")) {
     customActivity = prompt("Type in the task you need to do.");
-    if(filtered(customActivity))
-      customActivity = null;
-  }
-  else
+    if (filtered(customActivity)) customActivity = null;
+  } else {
     customActivity = null;
+  }
 
   // Load a new activity
   generateActivity();
+}
+
+function handleWipedCategory(category, completed) {
+  // Loop through all activities and find those that belong to the wiped category
+  activities.forEach(activity => {
+    if (activity.category === category) {
+      if(completed) {
+        if (!completedActivities.includes(activity.text)) {
+          completedActivities.push(activity.text);
+        }
+      }
+      else {
+        if (!skippedActivities.includes(activity.text)) {
+          skippedActivities.push(activity.text);
+        }
+      }
+    }
+  });
 }
 
 function filtered(customActivity) {

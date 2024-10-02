@@ -15,7 +15,6 @@ function getActivities() {
         mobileFriendlyTask: false,
         timesCompleted: 0,
         timesSkipped: 0,
-        timesSkippedConsecutively: 0,
         dateCreated: new Date().toISOString(),
         archived: false,
       },
