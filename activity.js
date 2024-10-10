@@ -1,7 +1,7 @@
 let activities = getActivities().filter((activity) => !activity.archived);
 let standingActivityPending = false;
 let currentActivity = null;
-let completedActivities = [];
+let completedActivities = getCompletedActivities() || [];
 let skippedActivities = [];
 let wipedCategories = JSON.parse(localStorage.getItem('wipes')) || [];
 let timesSkippedConsecutively = 0;
@@ -42,6 +42,10 @@ function saveActivity(updatedActivity) {
     activities[activityIndex] = updatedActivity;
     localStorage.setItem("activities", JSON.stringify(activities));
   }
+}
+
+function getCompletedActivities() {
+  return JSON.parse(localStorage.getItem('completedActivities'));
 }
 
 function generateActivity() {
@@ -146,6 +150,9 @@ function markAsCompleted() {
 
     // Save the activity back to localStorage
     saveActivity(currentActivity);
+
+    // Save completed activities to local storage
+    localStorage.setItem('completedActivities', JSON.stringify(completedActivities));
 
     // If the current activity category is wiped, handle all activities in that category
     if (wipedCategories.includes(currentActivity.category)) {
@@ -270,7 +277,7 @@ function filterActivities(option) {
     case "short":
       activities = activities.filter((activity) => !activity.longTask);
       break;
-    case "onTheGo":
+    case "mobile":
       activities = activities.filter((activity) => activity.mobileFriendlyTask);
       break;
     default:
@@ -278,10 +285,47 @@ function filterActivities(option) {
   }
 }
 
+// Function to get today's date at wake time
+function getTodayAtWakeTime() {
+  let now = new Date();
+  let wakeTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), wake - 1, 0, 0, 0);
+  if (wakeTime.getTime() < now.getTime()) {
+    wakeTime.setDate(wakeTime.getDate() + 1);
+  }
+  return wakeTime;
+}
+
+// Function to reset completed activities
+function resetCompletedActivities() {
+  completedActivities = [];
+  localStorage.setItem('completedActivities', JSON.stringify(completedActivities));
+  localStorage.setItem('nextResetTime', getTodayAtWakeTime());
+  console.log("Completed activities reset for the new day.");
+}
+
+// Check if the completed activities need to be reset when the page is loaded
 window.onload = function () {
   loadTheme();
 
   const selectedFilter = getQueryParameter("filter") || "default";
   filterActivities(selectedFilter);
+  let nextResetTime = localStorage.getItem('nextResetTime');
+
+  if (!nextResetTime) {
+    nextResetTime = getTodayAtWakeTime();
+    localStorage.setItem('nextResetTime', nextResetTime);
+  }
+
+  let now = new Date();
+
+  // If it's time to reset the activities, reset them and set a new reset time
+  if (now > nextResetTime) {
+    resetCompletedActivities();
+  }
+
+  console.log(now);
+  console.log(nextResetTime);
+  console.log(completedActivities);
+
   generateActivity();
 };
