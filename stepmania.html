@@ -24,6 +24,24 @@
         text-align: center;
         font-size: 4em;
       }
+      @media only screen and (max-width: 1200px) {
+        h1 {
+          font-size: 3em;
+        }
+      }
+      @media only screen and (max-width: 700px) {
+        h1 {
+          font-size: 2em;
+        }
+      }
+      @media only screen and (max-width: 400px) {
+        h1 {
+          font-size: 1.5em;
+        }
+        h2, h3 {
+          font-size: 1em;
+        }
+      }
     </style>
   </head>
   <body>
@@ -32,17 +50,20 @@
       <li>Get your dance pad out.</li>
       <li>Change to appropriate clothes.</li>
       <li>Launch Stepmania.</li>
-      <li>Play a Level 4-7 song to warm up.</li>
+      <li>Play a Level 7 song to warm up.</li>
       <ul>
-        <li>[4] Electricity</li>
-        <li>[5] Revival of Paradise</li>
         <li>[7] Disco Pop</li>
         <li>[7] Strictly Business</li>
       </ul>
       <li>Choose a path.</li>
+      <ul>
+        <li><a href="#touhou">Path of Touhou</a></li>
+      </ul>
+      <li>Can't choose a path? <button onclick="suggest()">Click Here.</button></li>
     </ol>
+    <h3 class="trance" id="suggestion"></h3>
 
-    <h2 class='trance'>Path of Touhou</h2>
+    <h2 class='trance' id="touhou">Path of Touhou</h2>
     <ol>
       <li>Play charts you've played starting from April 28, 2012.</li>
       <li>Play charts you've played starting from May 29, 2012.</li>
@@ -50,7 +71,7 @@
       <ul>
         <li>TPP5: Stage 11 Hard</li>
         <li>TPP5: Final Rush Medium</li>
-        <li>TPP7: Courses 5A, 7A, 9A, and AA Hard</li>
+        <li>TPP7: Courses 5A, 7A, 9A, and AA Hard </li>
         <li>TPP7: Elite Course Medium</li>
       </ul>
     </ol>
@@ -68,11 +89,44 @@
       <li>Play the 8s and 9s of the Starter Pack of Stamina.</li>
     </ol>
 
-    <h2 class='trance'>Path of Miscellaneous</h2>
+    <h2 class='trance'>Path of Other</h2>
     <ol>
       <li>Play the CNIT480 course</li>
       <li>Keep playing Level 5-8 songs for the first 40 minutes.</li>
-      <li>By the 40-minute mark, you can play 9s or 10s if you feel like it.</li>
+      <li>By the 40-minute mark, you can play 9s or 10s if you feel like it. ⭐⭐⭐-⭐⭐⭐⭐</li>
     </ol>
+    <script>
+      function suggest() {
+        const paths = ["TPP7: Course 5A Hard ⭐⭐⭐",
+        "TPP7: Course 7A Hard ⭐⭐⭐",
+        "TPP7: Course 9A Hard ⭐⭐⭐",
+        "TPP7: Course AA Hard ⭐⭐⭐",
+        "TPP7: Elite Rush Medium ⭐⭐⭐⭐",
+        "TPP5: Final Rush Medium ⭐⭐⭐⭐",
+        "TPP5: Stage 11 Hard ⭐⭐⭐⭐",
+        "CNIT480 ⭐⭐⭐",
+        "Condor's Overly Cool and Kawaii Simfiles Medium ⭐-⭐⭐⭐⭐",
+        "Condor's Overly Cool and Kawaii Simfiles Medium ⭐-⭐⭐⭐⭐",
+        "Mute Sims 1 Hard ⭐⭐-⭐⭐⭐⭐",
+        "Mute Sims 1 Hard ⭐⭐-⭐⭐⭐⭐",
+        "90-110BPM Stamina ⭐⭐⭐-⭐⭐⭐⭐",
+        "90-110BPM Stamina ⭐⭐⭐-⭐⭐⭐⭐",
+        "The Starter Pack of Stamina 8s and 9s ⭐⭐-⭐⭐⭐",
+        "The Starter Pack of Stamina 8s and 9s ⭐⭐-⭐⭐⭐",
+        "TPP1-3: April 28, 2012 ⭐⭐⭐",
+        "TPP4: May 29, 2012 ⭐⭐⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐",
+        "Random 7s and 8s ⭐-⭐⭐"];
+        document.getElementById("suggestion").innerHTML = paths[Math.floor(Math.random() * paths.length)]
+      }
+    </script>
   </body>
 </html>
