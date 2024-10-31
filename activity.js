@@ -309,7 +309,7 @@ window.onload = function () {
 
   const selectedFilter = getQueryParameter("filter") || "default";
   filterActivities(selectedFilter);
-  let nextResetTime = localStorage.getItem('nextResetTime');
+  let nextResetTime = new Date(localStorage.getItem('nextResetTime'));
 
   if (!nextResetTime) {
     nextResetTime = getTodayAtWakeTime();
