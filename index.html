@@ -7,35 +7,7 @@
   <link href="css/style.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
-  <h1>Random Activity Generator</h1>
-  <p>Select how you want to filter your activities:</p>
-  <div id="filters">
-    <button class="gold" onclick="applyFilter('default')">No Filter</button>
-    <button class="hotpink" onclick="applyFilter('short')">Short Only</button>
-    <button class="skyblue" onclick="applyFilter('lazy')">Lazy Only</button>
-    <button class="limegreen" onclick="applyFilter('lowPriority')">Low-Priority</button>
-    <button class="red2" onclick="applyFilter('highPriority')">High-Priority</button>
-    <button class="purple" onclick="applyFilter('mobile')">Mobile-Friendly</button>
-  </div>
-  <button class="blue" onclick="openOptions()">Manage Tasks</button>
-  <br>
-  <select id="themeSelector" onchange="changeTheme()">
-    <option value="original">Original Theme</option>
-    <option value="dark">Dark Theme</option>
-    <option value="digital">Digital Theme</option>
-  </select>
-  
-  <script src="script.js"></script>
-  <script>
-    function applyFilter(selectedFilter) {
-      window.location.href = `activity.html?filter=${selectedFilter}`;
-    }
-
-    function openOptions() {
-      window.location.href = 'manage.html';
-    }
-
-    window.onload = loadTheme;
-  </script>
+  <div id="root"></div>
+  <script type="module" src="/src/react/main.jsx"></script>
 </body>
 </html>

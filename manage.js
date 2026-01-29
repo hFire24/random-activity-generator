@@ -1,5 +1,33 @@
+import { getActivities, saveActivities, getCategories, saveCategories, getWipes, saveWipes, initSync } from './sync.js';
+import { getCurrentUser, onAuthChange, logout } from './auth.js';
+
 let currentEditIndex = null;
 let currentAction = null;
+
+// Export functions to window for onclick handlers
+window.renderActivities = renderActivities;
+window.addActivity = addActivity;
+window.toggleAdvancedOptions = toggleAdvancedOptions;
+window.updateImportance = updateImportance;
+window.updateLabel = updateLabel;
+window.openPopup = openPopup;
+window.closePopup = closePopup;
+window.saveChanges = saveChanges;
+window.confirmArchive = confirmArchive;
+window.confirmDelete = confirmDelete;
+window.confirmAction = confirmAction;
+window.cancelAction = cancelAction;
+window.duplicateActivity = duplicateActivity;
+window.unarchiveActivity = unarchiveActivity;
+window.showTutorial = showTutorial;
+window.closeTutorial = closeTutorial;
+window.exportActivities = exportActivities;
+window.importActivities = importActivities;
+window.openCategoryManager = openCategoryManager;
+window.closeCategoryManager = closeCategoryManager;
+window.addCategory = addCategory;
+window.changeTheme = changeTheme;
+window.loadTheme = loadTheme;
 
 function renderActivities() {
   const activities = getActivities();
@@ -152,26 +180,6 @@ function showButtons(type) {
   }
 }
 
-function getCategories() {
-  let categories = JSON.parse(localStorage.getItem('categories'));
-  if (!categories) {
-      categories = ['None']; // A default category if none exist
-      localStorage.setItem('categories', JSON.stringify(categories));
-  }
-  return categories;
-}
-
-function saveCategories(categories) {
-  localStorage.setItem('categories', JSON.stringify(categories));
-}
-
-function getWipes() {
-  let wipes = JSON.parse(localStorage.getItem('wipes'));
-  if(!wipes)
-    return [];
-  return wipes;
-}
-
 function openCategoryManager() {
   const categories = getCategories();
   const wipes = getWipes();
@@ -187,12 +195,12 @@ function openCategoryManager() {
 
     const categoryButton = document.createElement('button');
     categoryButton.className = "red";
-    categoryButton.addEventListener('click', function () {
+    categoryButton.addEventListener('click', async function () {
       if(confirm(`Are you sure you want to delete the ${category} category?`)) {
         let wipes = getWipes();
         wipes = wipes.filter(item => item !== category);
-        localStorage.setItem("wipes",JSON.stringify(wipes));
-        deleteCategory(index);
+        await saveWipes(wipes);
+        await deleteCategory(index);
       }
     });
     categoryButton.innerHTML = "Delete";
@@ -232,13 +240,13 @@ function closeCategoryManager() {
   document.getElementById('categoryOverlay').style.display = 'none';
 }
 
-function addCategory() {
+async function addCategory() {
   const newCategoryName = document.getElementById('newCategoryName').value;
   if (newCategoryName) {
     const categories = getCategories();
     if (!categories.includes(newCategoryName)) {
       categories.push(newCategoryName);
-      saveCategories(categories);
+      await saveCategories(categories);
       openCategoryManager(); // Refresh the category list
     } else {
       alert('Category already exists.');
@@ -246,7 +254,7 @@ function addCategory() {
   }
 }
 
-function deleteCategory(index) {
+async function deleteCategory(index) {
   let categories = getCategories();
   const deletedCategory = categories[index];
 
@@ -254,7 +262,7 @@ function deleteCategory(index) {
   if (categories.length > 1) {
     // Remove the category from the list
     categories.splice(index, 1);
-    saveCategories(categories);
+    await saveCategories(categories);
 
     // Now update any activities that had the deleted category
     let activities = getActivities();
@@ -266,7 +274,7 @@ function deleteCategory(index) {
     });
 
     // Save updated activities to local storage
-    localStorage.setItem("activities", JSON.stringify(activities));
+    await saveActivities(activities);
 
     // Refresh the category list
     openCategoryManager();
@@ -276,15 +284,15 @@ function deleteCategory(index) {
 }
 
 
-function toggleCategoryWipe(category, isWiped) {
+async function toggleCategoryWipe(category, isWiped) {
   let wipes = getWipes();
   if(!wipes)
     wipes = [];
   (isWiped && !wipes.includes(category)) ? wipes.push(category) : wipes = wipes.filter(item => item !== category);
-  localStorage.setItem("wipes",JSON.stringify(wipes));
+  await saveWipes(wipes);
 }
 
-function saveChanges() {
+async function saveChanges() {
   const activities = getActivities();
 
   if (currentEditIndex !== null) {
@@ -318,7 +326,7 @@ function saveChanges() {
     });
   }
 
-  localStorage.setItem("activities", JSON.stringify(activities));
+  await saveActivities(activities);
   closePopup();
   renderActivities();
 }
@@ -339,7 +347,7 @@ function showConfirmationDialog(message) {
   document.getElementById("confirmationOverlay").style.display = "block";
 }
 
-function confirmAction() {
+async function confirmAction() {
   const activities = getActivities();
 
   if (currentAction.type === "archive") {
@@ -349,7 +357,7 @@ function confirmAction() {
     activities.splice(currentAction.currentEditIndex, 1);
   }
 
-  localStorage.setItem("activities", JSON.stringify(activities));
+  await saveActivities(activities);
   closeConfirmationDialog();
   closePopup();
   renderActivities();
@@ -365,7 +373,7 @@ function closeConfirmationDialog() {
   currentAction = null;
 }
 
-function duplicateActivity() {
+async function duplicateActivity() {
   const activities = getActivities();
   if(currentEditIndex !== null) {
     const activityToDuplicate = activities[currentEditIndex];
@@ -379,17 +387,17 @@ function duplicateActivity() {
     let newEditIndex = currentEditIndex + 1;
     activities.splice(newEditIndex, 0, duplicatedActivity);
     // Create a new activity and insert
-    localStorage.setItem("activities", JSON.stringify(activities));
+    await saveActivities(activities);
     closePopup();
     renderActivities();
     openPopup(newEditIndex);
   }
 }
 
-function unarchiveActivity() {
+async function unarchiveActivity() {
   const activities = getActivities();
   activities[currentEditIndex].archived = false;
-  localStorage.setItem("activities", JSON.stringify(activities));
+  await saveActivities(activities);
   closePopup();
   renderActivities();
 }
@@ -419,7 +427,7 @@ function handleDragOver(e) {
   e.dataTransfer.dropEffect = "move";
 }
 
-function handleDrop(e) {
+async function handleDrop(e) {
   e.preventDefault();
   const draggedIndex = e.dataTransfer.getData("text/plain");
   const targetIndex = Array.from(e.currentTarget.parentElement.children).indexOf(e.currentTarget);
@@ -430,14 +438,44 @@ function handleDrop(e) {
   activities.splice(targetIndex, 0, draggedItem);
 
   // Update the local storage and re-render the activities
-  localStorage.setItem("activities", JSON.stringify(activities));
+  await saveActivities(activities);
   renderActivities();
 }
 
 // Initialize the activities list and theme on page load
-window.onload = function () {
-  renderActivities();
-  loadTheme();
+window.onload = async function () {
+  // Check for offline mode
+  const offlineMode = localStorage.getItem('offlineMode');
+  
+  if (offlineMode === 'true') {
+    // Offline mode - skip auth
+    renderActivities();
+    loadTheme();
+    return;
+  }
+  
+  // Check if user is authenticated
+  onAuthChange(async (user) => {
+    if (user) {
+      await initSync();
+      renderActivities();
+      loadTheme();
+      // Show logout button if user is logged in
+      const logoutBtn = document.getElementById('logoutButton');
+      if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    } else {
+      // Redirect to login if not authenticated
+      if (!window.location.pathname.includes('login.html')) {
+        window.location.href = 'login.html';
+      }
+    }
+  });
+};
+
+// Logout function
+window.logoutUser = async function() {
+  await logout();
+  window.location.href = 'login.html';
 };
 
 function showTutorial() {
@@ -468,12 +506,12 @@ function importActivities(event) {
   const file = event.target.files[0];
   const reader = new FileReader();
 
-  reader.onload = function(event) {
+  reader.onload = async function(event) {
     try {
       const importedActivities = JSON.parse(event.target.result);
       if (Array.isArray(importedActivities)) {
         const activities = importedActivities;
-        localStorage.setItem("activities", JSON.stringify(activities));
+        await saveActivities(activities);
         renderActivities();
         alert("Activities imported successfully!");
       } else {
@@ -485,4 +523,18 @@ function importActivities(event) {
   };
 
   reader.readAsText(file);
+}
+
+function changeTheme() {
+  const theme = document.getElementById("themeSelector").value;
+  document.body.className = theme;
+  localStorage.setItem('theme', theme);
+}
+
+function loadTheme() {
+  const theme = localStorage.getItem('theme') || 'dark';
+  document.body.className = theme;
+  if (document.getElementById("themeSelector")) {
+    document.getElementById("themeSelector").value = theme;
+  }
 }

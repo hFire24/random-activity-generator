@@ -13,9 +13,10 @@
     <div id="buttonsContainer">
         <button onclick="addActivity()" class="green">Add Activity</button>
         <button onclick="showTutorial()" class="purple">Tutorial</button>
-        <button onclick="location.href='index.html'" class="blue">Back to Main Page</button>
+        <button onclick="location.href='/'" class="blue">Back to Main Page</button>
         <button onclick="exportActivities()">Export Activities</button>
         <button onclick="document.getElementById('importFileInput').click()">Import Activities</button>
+        <button onclick="logoutUser()" class="red" id="logoutButton" style="display:none;">Logout</button>
         <input type="file" id="importFileInput" style="display: none;" onchange="importActivities(event)">
     </div>
     
@@ -121,7 +122,8 @@
         <button id="cancelButton" onclick="cancelAction()">Cancel</button>
     </div>
 
-    <script src="manage.js"></script>
-    <script src="script.js"></script>
+    <script src="theme.js"></script>
+    <script type="module" src="manage.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

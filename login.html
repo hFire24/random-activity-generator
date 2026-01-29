@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Login - Random Activity Generator</title>
+    <link href="css/style.css" rel="stylesheet" type="text/css" />
+    <style>
+        .auth-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background: var(--popup-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .auth-container h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .auth-form input {
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+        .auth-form button {
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-color);
+        }
+        .auth-toggle a {
+            color: var(--link-color);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+        .success-message {
+            color: #44ff44;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+        .info-message {
+            background: rgba(100, 150, 255, 0.2);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: white;
+            color: #444;
+            border: 1px solid #ddd;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .google-btn:hover {
+            background: #f8f8f8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .divider span {
+            padding: 0 10px;
+            font-size: 14px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h1 id="authTitle">Login to Sync</h1>
+        
+        <div class="info-message">
+            🔒 Secure cross-device syncing<br>
+            Your tasks will be private to your account
+        </div>
+        
+        <button class="google-btn" id="googleSignInBtn">
+            <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z" fill="#4285F4"/>
+                <path d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z" fill="#34A853"/>
+                <path d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z" fill="#FBBC05"/>
+                <path d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z" fill="#EA4335"/>
+            </svg>
+            Sign in with Google
+        </button>
+        
+        <div class="divider">
+            <span>or</span>
+        </div>
+        
+        <form class="auth-form" id="authForm">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required minlength="6">
+            <button type="submit" class="green" id="submitButton">Login</button>
+        </form>
+        
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        
+        <div class="auth-toggle">
+            <span id="toggleText">Don't have an account? </span>
+            <a id="toggleLink">Sign up</a>
+        </div>
+        
+        <div class="auth-toggle" style="margin-top: 10px;">
+            <a onclick="continueOffline()">Continue without syncing (offline mode)</a>
+        </div>
+    </div>
+    
+    <select id="themeSelector" onchange="changeTheme()">
+        <option value="original">Original Theme</option>
+        <option value="dark">Dark Theme</option>
+        <option value="digital">Digital Theme</option>
+    </select>
+    
+    <script type="module">
+        import { login, signup, signInWithGoogle, onAuthChange } from './auth.js';
+        import { initSync } from './sync.js';
+        
+        let isLoginMode = true;
+        
+        // Check if already logged in
+        onAuthChange((user) => {
+            if (user) {
+                window.location.href = 'manage.html';
+            }
+        });
+        
+        // Google Sign-In
+        document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+            const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
+            const googleBtn = document.getElementById('googleSignInBtn');
+            
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            googleBtn.disabled = true;
+            googleBtn.textContent = 'Signing in...';
+            
+            const result = await signInWithGoogle();
+            
+            if (result.success) {
+                successMsg.textContent = 'Success! Redirecting...';
+                successMsg.style.display = 'block';
+                await initSync();
+                setTimeout(() => {
+                    window.location.href = 'manage.html';
+                }, 1000);
+            } else {
+                googleBtn.disabled = false;
+                googleBtn.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z" fill="#4285F4"/>
+                        <path d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z" fill="#34A853"/>
+                        <path d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z" fill="#FBBC05"/>
+                        <path d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z" fill="#EA4335"/>
+                    </svg>
+                    Sign in with Google
+                `;
+                if (result.error !== 'Sign-in cancelled') {
+                    errorMsg.textContent = result.error;
+                    errorMsg.style.display = 'block';
+                }
+            }
+        });
+        
+        // Email/Password Auth
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
+            const submitBtn = document.getElementById('submitButton');
+            
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = isLoginMode ? 'Logging in...' : 'Creating account...';
+            
+            let result;
+            if (isLoginMode) {
+                result = await login(email, password);
+            } else {
+                result = await signup(email, password);
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = isLoginMode ? 'Login' : 'Sign Up';
+            
+            if (result.success) {
+                successMsg.textContent = 'Success! Redirecting...';
+                successMsg.style.display = 'block';
+                await initSync();
+                setTimeout(() => {
+                    window.location.href = 'manage.html';
+                }, 1000);
+            } else {
+                errorMsg.textContent = result.error;
+                errorMsg.style.display = 'block';
+            }
+        });
+        
+        document.getElementById('toggleLink').addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').textContent = isLoginMode ? 'Login to Sync' : 'Create Account';
+            document.getElementById('submitButton').textContent = isLoginMode ? 'Login' : 'Sign Up';
+            document.getElementById('toggleText').textContent = isLoginMode ? "Don't have an account? " : "Already have an account? ";
+            document.getElementById('toggleLink').textContent = isLoginMode ? 'Sign up' : 'Login';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        });
+        
+        window.continueOffline = function() {
+            // Set a flag to skip auth check
+            localStorage.setItem('offlineMode', 'true');
+            window.location.href = 'manage.html';
+        };
+        
+        // Theme support
+        window.changeTheme = function() {
+            const theme = document.getElementById("themeSelector").value;
+            document.body.className = theme;
+            localStorage.setItem('theme', theme);
+        };
+        
+        // Load theme
+        const theme = localStorage.getItem('theme') || 'dark';
+        document.body.className = theme;
+        document.getElementById("themeSelector").value = theme;
+    </script>
+</body>
+</html>
