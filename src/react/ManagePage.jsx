@@ -34,8 +34,8 @@ const ManagePage = () => {
           setIsAuthenticated(true);
           setTasks(getActivities());
         } else {
-          // Redirect to login
-          window.location.href = '/login.html';
+          // Navigate to login
+          navigate('/login');
         }
         setIsLoading(false);
       });
@@ -190,7 +190,7 @@ const ManagePage = () => {
   
   const handleLogout = async () => {
     await logout();
-    window.location.href = '/login.html';
+    navigate('/login');
   };
 
   const handleDeleteAccount = async () => {
@@ -206,7 +206,7 @@ const ManagePage = () => {
       
       if (result.success) {
         alert('Your account has been permanently deleted.');
-        window.location.href = '/login.html';
+        navigate('/login');
       } else {
         if (result.requiresReauth) {
           alert(result.error);

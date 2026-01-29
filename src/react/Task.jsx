@@ -1,8 +1,8 @@
 import React from "react";
 
 const Task = (props) => {
-  const { link, onClick } = props;
-  
+  const { link, onClick, forceUnderline } = props;
+
   const handleClick = () => {
     if (onClick) {
       onClick();
@@ -10,21 +10,21 @@ const Task = (props) => {
       window.open(link, "_blank");
     }
   };
-  
+
   const renderText = (text) => {
     if (typeof text === 'string') {
-      return text.replace(/<br\s*\/?>/gi, "\n");
+      return text.replace(/<br\s*\/?\>/gi, "\n");
     }
     return text;
   };
-  
+
   const style = {
     ...props.style,
     cursor: (link || onClick) ? "pointer" : "default",
-    textDecoration: (link || onClick) ? "underline" : "none",
+    textDecoration: (forceUnderline || link || onClick) ? "underline" : "none",
     whiteSpace: "pre-wrap"
   };
-  
+
   return (
     <h1 style={style} onClick={handleClick}>{renderText(props.children)}</h1>
   )

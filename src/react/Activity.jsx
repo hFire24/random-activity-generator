@@ -141,16 +141,22 @@ const Activity = (props) => {
       // Don't use the "No activities available" message as a valid saved task
       const isNoActivitiesMessage = savedTask.text === "No activities available. Press 'Manage Activities' to add tasks!";
       const isStretchMessage = savedTask.text === "Stand up and stretch if you can.";
-      
+
       if (isSameDay && !isNoActivitiesMessage) {
-        // Use the saved task from today
-        setActivity(savedTask);
-        hasValidTask = true;
-        
-        // If it's the stretch message, restore the standing task state
-        if (isStretchMessage && savedTask.actualTask) {
-          setStandingTaskPending(true);
-          setActualTask(savedTask.actualTask);
+        // If it's the stretch message, only restore if actualTask exists
+        if (isStretchMessage) {
+          if (savedTask.actualTask) {
+            setActivity(savedTask);
+            setStandingTaskPending(true);
+            setActualTask(savedTask.actualTask);
+            hasValidTask = true;
+          } else {
+            // Corrupt state: stretch message but no actualTask, so clear and force new task
+            saveCurrentTask(null);
+          }
+        } else {
+          setActivity(savedTask);
+          hasValidTask = true;
         }
       } else {
         // Clear the old task since it's from a previous day or is the "no activities" message
@@ -353,6 +359,7 @@ const Activity = (props) => {
     // Clear custom activity and standing task state
     setCustomActivity(null);
     setStandingTaskPending(false);
+    setActualTask(null);
     setHasValidSavedTask(false); // Force generation of new task
   }
 
@@ -378,6 +385,7 @@ const Activity = (props) => {
     // Clear custom activity and standing task state
     setCustomActivity(null);
     setStandingTaskPending(false);
+    setActualTask(null);
     setHasValidSavedTask(false); // Force generation of new task
   }
 
@@ -410,9 +418,21 @@ const Activity = (props) => {
   }
   
   const handleStandClick = () => {
-    if (standingTaskPending && actualTask) {
-      setActivity(actualTask);
+    let taskToShow = actualTask;
+    
+    // If actualTask state is null, try to get it from the saved task
+    if (!taskToShow) {
+      const savedTask = getCurrentTask();
+      if (savedTask && savedTask.actualTask) {
+        taskToShow = savedTask.actualTask;
+        setActualTask(taskToShow);
+      }
+    }
+    
+    if (taskToShow) {
+      setActivity(taskToShow);
       setStandingTaskPending(false);
+      saveCurrentTask(taskToShow);
     }
   };
 
@@ -420,12 +440,18 @@ const Activity = (props) => {
     return <div><h1>Loading...</h1></div>;
   }
 
+  const isStretchMessage = activity.text === "Stand up and stretch if you can.";
+
   return (
     <>
-      <Task link={standingTaskPending ? null : activity.link} onClick={standingTaskPending ? handleStandClick : undefined}>
+      <Task 
+        link={(!isStretchMessage && activity.link) ? activity.link : null}
+        onClick={isStretchMessage ? handleStandClick : undefined}
+        forceUnderline={isStretchMessage}
+      >
         {activity.text}
       </Task>
-      {!standingTaskPending && (
+      {!isStretchMessage && (
         <>
           <button onClick={() => markAsCompleted()} className="activity-button green">Mark as Completed</button>
           <button onClick={() => skipTask()} className="skip-button red">Skip Task</button>
