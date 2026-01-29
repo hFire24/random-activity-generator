@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from "react";
+import { getCategories } from "../../sync.js";
 
-const TaskEditor = ({ task, onSave, onClose }) => {
+const TaskEditor = ({ task, onSave, onClose, onDelete, onArchive, onUnarchive, onDuplicate }) => {
   const [text, setText] = useState("");
   const [link, setLink] = useState("");
   const [importance, setImportance] = useState(1);
@@ -9,10 +10,16 @@ const TaskEditor = ({ task, onSave, onClose }) => {
   const [activeTask, setActiveTask] = useState(false);
   const [longTask, setLongTask] = useState(false);
   const [mobileFriendly, setMobileFriendly] = useState(false);
+  const [categories, setCategories] = useState(["None"]);
+  const [isNewTask, setIsNewTask] = useState(true);
 
   // Load task data when a task is passed in
   useEffect(() => {
-    if (task) {
+    setCategories(getCategories());
+    
+    if (task && task.text) {
+      // Existing task
+      setIsNewTask(false);
       setText(task.text || "");
       setLink(task.link || "");
       setImportance(task.importance || 1);
@@ -21,24 +28,43 @@ const TaskEditor = ({ task, onSave, onClose }) => {
       setActiveTask(task.activeTask || false);
       setLongTask(task.longTask || false);
       setMobileFriendly(task.mobileFriendlyTask || false);
+    } else {
+      // New task
+      setIsNewTask(true);
+      setText("");
+      setLink("");
+      setImportance(1);
+      setCategory("None");
+      setStandingTask(false);
+      setActiveTask(false);
+      setLongTask(false);
+      setMobileFriendly(false);
     }
   }, [task]);
 
   // Handle form submission
   const handleSave = () => {
     const updatedTask = {
+      ...task,
       text,
-      link,
-      importance,
-      category,
+      link: link || null,
+      importance: parseInt(importance),
+      category: category || null,
       standingTask,
       activeTask,
       longTask,
       mobileFriendlyTask: mobileFriendly,
     };
+    
+    // Add default values for new tasks
+    if (isNewTask) {
+      updatedTask.timesCompleted = 0;
+      updatedTask.timesSkipped = 0;
+      updatedTask.dateCreated = new Date().toISOString();
+      updatedTask.archived = false;
+    }
 
     onSave(updatedTask);
-    onClose();
   };
 
   const requiredAst = <span style={{color: "red", fontWeight:"inherit"}}>*</span>;
@@ -61,12 +87,9 @@ const TaskEditor = ({ task, onSave, onClose }) => {
         <div className="row">
           <label htmlFor="category">Category</label>
           <select id="category" value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="None">None</option>
-            <option value="Meditation">Meditation</option>
-            <option value="Music">Music</option>
-            <option value="Food">Food</option>
-            <option value="Exercise">Exercise</option>
-            <option value="Gaming">Gaming</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
         </div>
 
@@ -112,7 +135,19 @@ const TaskEditor = ({ task, onSave, onClose }) => {
 
         <div className="save-exit-group">
           <button className="green" onClick={handleSave}>Save</button>
-          <button className="red" onClick={onClose}>Cancel</button>
+          {!isNewTask && onDuplicate && (
+            <button className="blue" onClick={() => { onDuplicate(task); onClose(); }}>Duplicate</button>
+          )}
+          {!isNewTask && task.archived && onUnarchive && (
+            <button className="yellow" onClick={() => { onUnarchive(task); onClose(); }}>Unarchive</button>
+          )}
+          {!isNewTask && !task.archived && onArchive && (
+            <button className="yellow" onClick={() => { onArchive(task); onClose(); }}>Archive</button>
+          )}
+          {!isNewTask && onDelete && (
+            <button className="red" onClick={() => { onDelete(task); onClose(); }}>Delete</button>
+          )}
+          <button onClick={onClose}>Cancel</button>
         </div>
       </div>
     </div>

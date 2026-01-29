@@ -1,18 +1,24 @@
 import React from "react";
 
-const TaskItem = ({ task, onEdit }) => {
+const TaskItem = ({ task, onEdit, onDragStart, onDragOver, onDrop, index }) => {
   const renderTaskText = (text) => {
     return text.replace(/<br\s*\/?>/gi, "\n");
   };
 
   return (
-    <div className="activity-list-item">
-      <span className="drag-handle">☰</span>
+    <div 
+      className="activity-list-item"
+      draggable="true"
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={(e) => onDragOver(e)}
+      onDrop={(e) => onDrop(e, index)}
+    >
+      <span className="drag-handle" style={{ cursor: 'grab' }}>☰</span>
       <span
         className="task-name"
         style={{ 
           textDecoration: task.archived ? "line-through" : "none",
-          whiteSpace: "pre-wrap" // Preserve whitespace and line breaks
+          whiteSpace: "pre-wrap"
         }}
       >
         {renderTaskText(task.text)}
