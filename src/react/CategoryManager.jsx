@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getCategories, saveCategories, getWipes, saveWipes } from "../../sync.js";
+import { sanitizeInput } from "./utils.js";
 
 const CategoryManager = ({ onClose }) => {
   const [categories, setCategories] = useState([]);
@@ -12,15 +13,16 @@ const CategoryManager = ({ onClose }) => {
   }, []);
 
   const handleAddCategory = async () => {
-    if (!newCategory.trim()) {
+    const sanitizedCategory = sanitizeInput(newCategory.trim());
+    if (!sanitizedCategory) {
       alert("Category name cannot be empty!");
       return;
     }
-    if (categories.includes(newCategory)) {
+    if (categories.includes(sanitizedCategory)) {
       alert("Category already exists!");
       return;
     }
-    const updatedCategories = [...categories, newCategory];
+    const updatedCategories = [...categories, sanitizedCategory];
     await saveCategories(updatedCategories);
     setCategories(updatedCategories);
     setNewCategory("");

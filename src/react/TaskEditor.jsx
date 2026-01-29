@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from "react";
 import { getCategories } from "../../sync.js";
+import { sanitizeInput } from "./utils.js";
 
 const TaskEditor = ({ task, onSave, onClose, onDelete, onArchive, onUnarchive, onDuplicate }) => {
   const [text, setText] = useState("");
@@ -46,8 +47,8 @@ const TaskEditor = ({ task, onSave, onClose, onDelete, onArchive, onUnarchive, o
   const handleSave = () => {
     const updatedTask = {
       ...task,
-      text,
-      link: link || null,
+      text: sanitizeInput(text),
+      link: link ? sanitizeInput(link) : null,
       importance: parseInt(importance),
       category: category || null,
       standingTask,
