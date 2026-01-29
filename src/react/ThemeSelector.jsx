@@ -25,13 +25,16 @@ const ThemeSelector = () => {
   }, [theme]);
 
   return (
-    <form id='themeSelector'>
-      <select id="theme" value={theme} onChange={changeTheme}>
-        <option value="original">Original Theme</option>
-        <option value="dark">Dark Theme</option>
-        <option value="digital">Digital Theme</option>
-      </select>
-    </form>
+    <div className="theme-selector">
+      <h3>Theme Selector</h3>
+      <form id='themeSelector'>
+        <select id="theme" value={theme} onChange={changeTheme}>
+          <option value="original">Original Theme</option>
+          <option value="dark">Dark Theme</option>
+          <option value="digital">Digital Theme</option>
+        </select>
+      </form>
+    </div>
   );
 };
 

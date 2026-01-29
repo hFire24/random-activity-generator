@@ -256,16 +256,31 @@ const ManagePage = () => {
         ))}
       </div>
       <div id="buttonsReactContainer">
-        <button onClick={() => editTask({}, false)} className="green">Add Activity</button>
-        <button onClick={() => setShowCategoryManager(true)} className="orange">Manage Categories</button>
-        <button onClick={() => navigate("/secrets")} className="red2">Manage Secrets</button>
-        <button onClick={() => setShowTutorial(true)} className="purple">Tutorial</button>
-        <button onClick={() => navigate("/")} className="blue">Back to Main Page</button>
-        <button onClick={handleExport} className="gray">Export Activities</button>
-        <button onClick={() => document.getElementById('import-file').click()} className="gray">Import Activities</button>
+        <div className="button-section">
+          <h3>Activity Management</h3>
+          <button onClick={() => editTask({}, false)} className="green">Add Activity</button>
+          <button onClick={() => setShowCategoryManager(true)} className="orange">Manage Categories</button>
+          <button onClick={() => navigate("/secrets")} className="red2">Manage Secrets</button>
+        </div>
+
+        <div className="button-section">
+          <h3>Data</h3>
+          <button onClick={handleExport} className="gray">Export Data</button>
+          <button onClick={() => document.getElementById('import-file').click()} className="gray">Import Data</button>
+        </div>
+
+        <div className="button-section">
+          <h3>Help</h3>
+          <button onClick={() => setShowTutorial(true)} className="purple">Tutorial</button>
+        </div>
+
         {isAuthenticated && localStorage.getItem('offlineMode') !== 'true' && (
-          <button onClick={handleDeleteAccount} className="red" style={{ marginTop: '20px' }}>Delete Account</button>
+          <div className="button-section">
+            <h3>Account</h3>
+            <button onClick={handleDeleteAccount} className="red">Delete Account</button>
+          </div>
         )}
+
         <input
           id="import-file"
           type="file"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSecrets, saveSecrets, initSync } from "../../sync.js";
+import { sanitizeInput } from "./utils.js";
 
 const Secrets = () => {
   const [secrets, setSecrets] = useState([]);
@@ -19,8 +20,9 @@ const Secrets = () => {
   }, []);
 
   const handleAddSecret = async () => {
-    if (newSecret.trim()) {
-      const updatedSecrets = [...secrets, newSecret];
+    const sanitizedSecret = sanitizeInput(newSecret.trim());
+    if (sanitizedSecret) {
+      const updatedSecrets = [...secrets, sanitizedSecret];
       setSecrets(updatedSecrets);
       setSecretsText(updatedSecrets.join('\n'));
       await saveSecrets(updatedSecrets);
@@ -31,7 +33,8 @@ const Secrets = () => {
   const handleSaveSecrets = async () => {
     const updatedSecrets = secretsText
       .split('\n')
-      .filter(secret => secret.trim() !== "");
+      .map(secret => sanitizeInput(secret.trim()))
+      .filter(secret => secret !== "");
     setSecrets(updatedSecrets);
     await saveSecrets(updatedSecrets);
     alert("Secrets saved!");

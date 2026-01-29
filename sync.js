@@ -198,7 +198,11 @@ export function getCurrentTask() {
 // Save current task (syncs to cloud if authenticated)
 export async function saveCurrentTask(task) {
   if (task) {
-    localStorage.setItem('currentTask', JSON.stringify(task));
+    const taskWithTimestamp = {
+      ...task,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem('currentTask', JSON.stringify(taskWithTimestamp));
   } else {
     localStorage.removeItem('currentTask');
   }
@@ -210,7 +214,7 @@ export async function saveCurrentTask(task) {
       categories: getCategories(),
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
-      currentTask: task,
+      currentTask: task ? { ...task, savedAt: new Date().toISOString() } : null,
       secrets: getSecrets()
     });
     updateInProgress = false;

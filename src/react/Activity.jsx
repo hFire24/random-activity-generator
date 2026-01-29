@@ -2,6 +2,7 @@ import React, { useState, useEffect, use } from "react";
 import Task from "./Task";
 import { useNavigate } from "react-router-dom";
 import { getActivities, saveActivities, getWipes, getCurrentTask, saveCurrentTask } from "../../sync.js";
+import { sanitizeInput } from "./utils.js";
 
 const Activity = (props) => {
   const [activities, setActivities] = useState([]);
@@ -24,6 +25,8 @@ const Activity = (props) => {
   const [customActivity, setCustomActivity] = useState(null);
   const [standingTaskPending, setStandingTaskPending] = useState(false);
   const [actualTask, setActualTask] = useState(null);
+  const [hasValidSavedTask, setHasValidSavedTask] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
   const bedtimeEnabled = true;
@@ -72,7 +75,14 @@ const Activity = (props) => {
     const completed = JSON.parse(localStorage.getItem('completedActivities')) || [];
     setCompletedActivities(completed);
     
-    let storedTasks = getActivities().filter((activity) => !activity.archived);
+    let storedTasks = getActivities()
+      .filter((activity) => !activity.archived)
+      .map(activity => ({
+        ...activity,
+        timesCompleted: activity.timesCompleted ?? 0,
+        timesSkipped: activity.timesSkipped ?? 0,
+        timesSkippedConsecutively: activity.timesSkippedConsecutively ?? 0
+      }));
     
     // Add bedtime task if it's bedtime
     if (isBedtime(sleep, wake - 1) && bedtimeEnabled) {
@@ -115,26 +125,64 @@ const Activity = (props) => {
         filtered = storedTasks;
     }
     
-    setActivities(filtered);
-    
-    // Check if there's a saved current task
+    // Check if there's a saved current task and if it's from today
     const savedTask = getCurrentTask();
-    if (savedTask) {
-      setActivity(savedTask);
-      if (savedTask.standingTask && savedTask.text !== "Stand up and stretch if you can.") {
-        setStandingTaskPending(false);
-        setActualTask(null);
+    let hasValidTask = false;
+    
+    if (savedTask && savedTask.savedAt) {
+      const savedDate = new Date(savedTask.savedAt);
+      const today = new Date();
+      
+      // Check if the saved task is from today (same year, month, and day)
+      const isSameDay = savedDate.getFullYear() === today.getFullYear() &&
+                        savedDate.getMonth() === today.getMonth() &&
+                        savedDate.getDate() === today.getDate();
+      
+      // Don't use the "No activities available" message as a valid saved task
+      const isNoActivitiesMessage = savedTask.text === "No activities available. Press 'Manage Activities' to add tasks!";
+      const isStretchMessage = savedTask.text === "Stand up and stretch if you can.";
+      
+      if (isSameDay && !isNoActivitiesMessage) {
+        // Use the saved task from today
+        setActivity(savedTask);
+        hasValidTask = true;
+        
+        // If it's the stretch message, restore the standing task state
+        if (isStretchMessage && savedTask.actualTask) {
+          setStandingTaskPending(true);
+          setActualTask(savedTask.actualTask);
+        }
+      } else {
+        // Clear the old task since it's from a previous day or is the "no activities" message
+        saveCurrentTask(null);
       }
     }
+    
+    setHasValidSavedTask(hasValidTask);
+    setActivities(filtered);
+    setIsLoading(false);
   }, [props.filter]);
 
   useEffect(() => {
-    console.log(activities.length);
+    console.log('Second useEffect running. Activities:', activities.length, 'Loading:', isLoading, 'HasValid:', hasValidSavedTask);
+    
+    // Don't run until activities are loaded
+    if (isLoading) {
+      console.log('Still loading, skipping');
+      return;
+    }
+    
+    // Don't generate a new task if we have a valid saved task from today
+    if (hasValidSavedTask) {
+      console.log('Has valid saved task, skipping generation');
+      return;
+    }
     
     // Filter out completed and skipped activities
     const availableActivities = activities.filter(
       act => !completedActivities.includes(act.text) && !skippedActivities.includes(act.text)
     );
+    console.log('Available activities after filtering:', availableActivities.length);
     
     if (customActivity) {
       // Show custom activity
@@ -198,6 +246,7 @@ const Activity = (props) => {
           timesSkipped: 0,
           dateCreated: new Date().toISOString(),
           archived: false,
+          actualTask: selectedActivity // Save the actual task to restore later
         });
       } else {
         setActivity(selectedActivity);
@@ -213,8 +262,8 @@ const Activity = (props) => {
       saveCurrentTask(newActivity);
     } else {
       const noActivityTask = {
-        text: "No activities available. Please add some!",
-        link: "manage.html",
+        text: "No activities available. Press 'Manage Activities' to add tasks!",
+        link: null,
         category: null,
         importance: 1,
         standingTask: false,
@@ -224,12 +273,12 @@ const Activity = (props) => {
         timesCompleted: 0,
         timesSkipped: 0,
         dateCreated: new Date().toISOString(),
-        archived: false,
+        archived: false
       };
       setActivity(noActivityTask);
       saveCurrentTask(noActivityTask);
     }
-  }, [activities, completedActivities, skippedActivities, customActivity]);
+  }, [activities, completedActivities, skippedActivities, customActivity, isLoading, hasValidSavedTask]);
 
   const saveActivity = async (updatedActivity) => {
     const allActivities = getActivities();
@@ -286,7 +335,8 @@ const Activity = (props) => {
     const taskToUpdate = standingTaskPending ? actualTask : activity;
 
     if (!customActivity && !completedActivities.includes(taskToUpdate.text) && taskToUpdate.category !== "sleep") {
-      taskToUpdate.timesCompleted += 1;
+      taskToUpdate.timesCompleted = (taskToUpdate.timesCompleted ?? 0) + 1;
+      taskToUpdate.timesSkippedConsecutively = 0;
 
       // Add to completed activities
       const newCompleted = [...completedActivities, taskToUpdate.text];
@@ -303,6 +353,7 @@ const Activity = (props) => {
     // Clear custom activity and standing task state
     setCustomActivity(null);
     setStandingTaskPending(false);
+    setHasValidSavedTask(false); // Force generation of new task
   }
 
   async function skipTask() {
@@ -311,7 +362,8 @@ const Activity = (props) => {
     const taskToUpdate = standingTaskPending ? actualTask : activity;
 
     if (!customActivity && !skippedActivities.includes(taskToUpdate.text) && taskToUpdate.category !== "sleep") {
-      taskToUpdate.timesSkipped += 1;
+      taskToUpdate.timesSkipped = (taskToUpdate.timesSkipped ?? 0) + 1;
+      taskToUpdate.timesSkippedConsecutively = (taskToUpdate.timesSkippedConsecutively ?? 0) + 1;
 
       // Add to skipped activities
       setSkippedActivities(prev => [...prev, taskToUpdate.text]);
@@ -326,12 +378,34 @@ const Activity = (props) => {
     // Clear custom activity and standing task state
     setCustomActivity(null);
     setStandingTaskPending(false);
+    setHasValidSavedTask(false); // Force generation of new task
   }
 
-  function addCustomTask() {
+  async function addCustomTask() {
     const customText = window.prompt("Type in the task you need to do:");
     if (customText && customText.trim() && !filtered(customText)) {
-      setCustomActivity(customText);
+      const sanitizedText = sanitizeInput(customText);
+      const customTask = {
+        text: sanitizedText,
+        link: null,
+        category: "Custom",
+        importance: 2,
+        standingTask: false,
+        activeTask: false,
+        longTask: false,
+        mobileFriendlyTask: true,
+        timesCompleted: 0,
+        timesSkipped: 0,
+        timesSkippedConsecutively: 0,
+        dateCreated: new Date().toISOString(),
+        archived: false,
+      };
+      
+      // Set it as the current activity immediately
+      setActivity(customTask);
+      setHasValidSavedTask(true); // Mark that we have a valid current task
+      await saveCurrentTask(customTask);
+      setCustomActivity(sanitizedText);
     }
   }
   
@@ -341,6 +415,10 @@ const Activity = (props) => {
       setStandingTaskPending(false);
     }
   };
+
+  if (isLoading) {
+    return <div><h1>Loading...</h1></div>;
+  }
 
   return (
     <>
@@ -356,7 +434,6 @@ const Activity = (props) => {
       <br/>
       <button onClick={addCustomTask} className="purple">Add Custom Task</button>
       <button onClick={() => navigate("/manage")} className="blue">Manage Activities</button>
-      <button onClick={resetCompletedActivities} className="red2" style={{ fontSize: '12px' }}>[DEV] Force Reset</button>
       <br/><br/>
     </>
   )
