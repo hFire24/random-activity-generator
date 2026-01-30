@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -12,9 +13,9 @@ const Footer = () => {
           GitHub
         </a>
         <span className="footer-separator">•</span>
-        <a href="/terms">Terms of Use</a>
+        <Link to="/terms">Terms of Use</Link>
         <span className="footer-separator">•</span>
-        <a href="/privacy">Privacy Policy</a>
+        <Link to="/privacy">Privacy Policy</Link>
       </div>
     </footer>
   );

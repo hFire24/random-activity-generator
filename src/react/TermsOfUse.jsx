@@ -8,7 +8,7 @@ const TermsOfUse = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/TERMS-OF-USE.md')
+    fetch('/random-activity-generator/TERMS-OF-USE.md')
       .then(response => response.text())
       .then(text => {
         setContent(text);

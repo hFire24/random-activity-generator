@@ -8,7 +8,7 @@ const PrivacyPolicy = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/PRIVACY-POLICY.md')
+    fetch('/random-activity-generator/PRIVACY-POLICY.md')
       .then(response => response.text())
       .then(text => {
         setContent(text);
