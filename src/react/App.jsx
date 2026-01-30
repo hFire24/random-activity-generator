@@ -16,7 +16,7 @@ function App() {
 
   return (
     <>
-      <BrowserRouter basename="/random-activity-generator">
+      <BrowserRouter>
         <HomeButton />
         <div className="app-container">
           <div className="app-content">
