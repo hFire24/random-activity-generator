@@ -155,8 +155,53 @@ const Activity = (props) => {
             saveCurrentTask(null);
           }
         } else {
-          setActivity(savedTask);
-          hasValidTask = true;
+          // Check if the saved task is a standing task that was completed
+          // If so, we need to go through the standing flow again
+          if (savedTask.standingTask) {
+            // Check if this task was already completed
+            if (completed.includes(savedTask.text)) {
+              // Don't restore - let it generate a new task or show the standing prompt
+              saveCurrentTask(null);
+            } else {
+              // Task not completed yet, show the standing prompt
+              setActualTask(savedTask);
+              setActivity({
+                text: "Stand up and stretch if you can.",
+                link: null,
+                category: null,
+                importance: 1,
+                standingTask: false,
+                activeTask: false,
+                longTask: false,
+                mobileFriendlyTask: false,
+                timesCompleted: 0,
+                timesSkipped: 0,
+                dateCreated: new Date().toISOString(),
+                archived: false,
+              });
+              setStandingTaskPending(true);
+              saveCurrentTask({
+                text: "Stand up and stretch if you can.",
+                link: null,
+                category: null,
+                importance: 1,
+                standingTask: false,
+                activeTask: false,
+                longTask: false,
+                mobileFriendlyTask: false,
+                timesCompleted: 0,
+                timesSkipped: 0,
+                dateCreated: new Date().toISOString(),
+                archived: false,
+                actualTask: savedTask
+              });
+              hasValidTask = true;
+            }
+          } else {
+            // Not a standing task, restore normally
+            setActivity(savedTask);
+            hasValidTask = true;
+          }
         }
       } else {
         // Clear the old task since it's from a previous day or is the "no activities" message
