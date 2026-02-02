@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  getAdditionalUserInfo,
   signOut,
   onAuthStateChanged 
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
@@ -35,7 +36,7 @@ export async function login(email, password) {
   }
 }
 
-export async function signup(email, password) {
+export async function signup(email, password, acceptedTermsAt) {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     // Initialize user data
@@ -44,7 +45,9 @@ export async function signup(email, password) {
       categories: ['None'],
       wipes: [],
       theme: 'dark',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      acceptedTermsAt: acceptedTermsAt || null,
+      acceptedPrivacyAt: acceptedTermsAt || null
     });
     return { success: true, user: userCredential.user };
   } catch (error) {
@@ -52,27 +55,31 @@ export async function signup(email, password) {
   }
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(acceptedTermsAt) {
   try {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
+    const additionalInfo = getAdditionalUserInfo(userCredential);
+    const isNewUser = additionalInfo?.isNewUser || false;
     
     // Check if this is a new user and initialize their data
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     const userDoc = await getDoc(userDocRef);
     
-    if (!userDoc.exists()) {
+    if (!userDoc.exists() && isNewUser && acceptedTermsAt) {
       // Initialize user data for new Google users
       await setDoc(userDocRef, {
         activities: [],
         categories: ['None'],
         wipes: [],
         theme: 'dark',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        acceptedTermsAt: acceptedTermsAt,
+        acceptedPrivacyAt: acceptedTermsAt
       });
     }
     
-    return { success: true, user: userCredential.user };
+    return { success: true, user: userCredential.user, isNewUser: isNewUser };
   } catch (error) {
     if (error.code === 'auth/popup-closed-by-user') {
       return { success: false, error: 'Sign-in cancelled' };
