@@ -3,7 +3,7 @@ import TaskItem from "./TaskItem";
 import TaskEditor from "./TaskEditor";
 import CategoryManager from "./CategoryManager";
 import { useNavigate } from "react-router-dom";
-import { getActivities, saveActivities, getCategories, saveCategories, getWipes, saveWipes, getSecrets, saveSecrets, initSync } from "../../sync.js";
+import { getActivities, saveActivities, getCategories, saveCategories, getWipes, saveWipes, getSecrets, saveSecrets, getFilter, saveFilter, initSync } from "../../sync.js";
 import { getCurrentUser, onAuthChange, logout } from "../../auth.js";
 
 const ManagePage = () => {
@@ -133,7 +133,8 @@ const ManagePage = () => {
       activities: tasks,
       categories: getCategories(),
       wipes: getWipes(),
-      secrets: getSecrets()
+      secrets: getSecrets(),
+      filter: getFilter()
     };
     const jsonString = JSON.stringify(exportData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
@@ -175,6 +176,10 @@ const ManagePage = () => {
           
           if (imported.secrets) {
             await saveSecrets(imported.secrets);
+          }
+
+          if (imported.filter) {
+            await saveFilter(imported.filter);
           }
           
           alert("Activities, categories, secrets, and settings imported successfully!");

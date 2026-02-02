@@ -22,6 +22,7 @@ export async function initSync() {
       const localWipes = JSON.parse(localStorage.getItem('wipes') || '[]');
       const localTheme = localStorage.getItem('theme') || 'dark';
       const localSecrets = JSON.parse(localStorage.getItem('secretArray') || '[]');
+      const localFilter = localStorage.getItem('filter') || 'default';
       
       // If cloud is empty but local has data, push local to cloud
       if (result.data.activities.length === 0 && localActivities.length > 0) {
@@ -31,7 +32,8 @@ export async function initSync() {
           wipes: localWipes,
           theme: localTheme,
           currentTask: JSON.parse(localStorage.getItem('currentTask') || 'null'),
-          secrets: localSecrets
+          secrets: localSecrets,
+          filter: localFilter
         });
       } else {
         // Use cloud data
@@ -39,6 +41,7 @@ export async function initSync() {
         localStorage.setItem('categories', JSON.stringify(result.data.categories));
         localStorage.setItem('wipes', JSON.stringify(result.data.wipes));
         localStorage.setItem('theme', result.data.theme);
+        localStorage.setItem('filter', result.data.filter || localFilter);
         if (result.data.currentTask) {
           localStorage.setItem('currentTask', JSON.stringify(result.data.currentTask));
         }
@@ -54,6 +57,7 @@ export async function initSync() {
           localStorage.setItem('categories', JSON.stringify(data.categories));
           localStorage.setItem('wipes', JSON.stringify(data.wipes));
           localStorage.setItem('theme', data.theme);
+          localStorage.setItem('filter', data.filter || 'default');
           if (data.currentTask) {
             localStorage.setItem('currentTask', JSON.stringify(data.currentTask));
           } else {
@@ -111,7 +115,8 @@ export async function saveActivities(activities) {
       categories: getCategories(),
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
-      secrets: getSecrets()
+      secrets: getSecrets(),
+      filter: getFilter()
     });
     updateInProgress = false;
   }
@@ -138,7 +143,8 @@ export async function saveCategories(categories) {
       categories: categories,
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
-      secrets: getSecrets()
+      secrets: getSecrets(),
+      filter: getFilter()
     });
     updateInProgress = false;
   }
@@ -162,7 +168,8 @@ export async function saveWipes(wipes) {
       categories: getCategories(),
       wipes: wipes,
       theme: localStorage.getItem('theme') || 'dark',
-      secrets: getSecrets()
+      secrets: getSecrets(),
+      filter: getFilter()
     });
     updateInProgress = false;
   }
@@ -179,7 +186,8 @@ export async function saveTheme(theme) {
       categories: getCategories(),
       wipes: getWipes(),
       theme: theme,
-      secrets: getSecrets()
+      secrets: getSecrets(),
+      filter: getFilter()
     });
     updateInProgress = false;
   }
@@ -188,6 +196,31 @@ export async function saveTheme(theme) {
 // Get theme
 export function getTheme() {
   return localStorage.getItem('theme') || 'dark';
+}
+
+// Get filter
+export function getFilter() {
+  return localStorage.getItem('filter') || 'default';
+}
+
+// Save filter (syncs to cloud if authenticated)
+export async function saveFilter(filter) {
+  const nextFilter = filter || 'default';
+  localStorage.setItem('filter', nextFilter);
+  
+  if (cloudSyncEnabled && getCurrentUser()) {
+    updateInProgress = true;
+    await syncToCloud({
+      activities: getActivities(),
+      categories: getCategories(),
+      wipes: getWipes(),
+      theme: localStorage.getItem('theme') || 'dark',
+      currentTask: getCurrentTask(),
+      secrets: getSecrets(),
+      filter: nextFilter
+    });
+    updateInProgress = false;
+  }
 }
 // Get current task
 export function getCurrentTask() {
@@ -215,7 +248,8 @@ export async function saveCurrentTask(task) {
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
       currentTask: task ? { ...task, savedAt: new Date().toISOString() } : null,
-      secrets: getSecrets()
+      secrets: getSecrets(),
+      filter: getFilter()
     });
     updateInProgress = false;
   }
@@ -239,7 +273,8 @@ export async function saveSecrets(secrets) {
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
       currentTask: getCurrentTask(),
-      secrets: secrets
+      secrets: secrets,
+      filter: getFilter()
     });
     updateInProgress = false;
   }

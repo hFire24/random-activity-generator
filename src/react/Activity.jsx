@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Task from "./Task";
 import { useNavigate } from "react-router-dom";
 import { getActivities, saveActivities, getWipes, getCurrentTask, saveCurrentTask } from "../../sync.js";
@@ -27,6 +27,8 @@ const Activity = (props) => {
   const [actualTask, setActualTask] = useState(null);
   const [hasValidSavedTask, setHasValidSavedTask] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const previousFilterRef = useRef(props.filter);
+  const skipNextGenerationRef = useRef(false);
   const navigate = useNavigate();
   
   const bedtimeEnabled = true;
@@ -59,6 +61,11 @@ const Activity = (props) => {
   };
 
   useEffect(() => {
+    const filterChanged = previousFilterRef.current !== props.filter;
+    if (filterChanged) {
+      skipNextGenerationRef.current = true;
+      previousFilterRef.current = props.filter;
+    }
     // Check if completed activities need to be reset
     let nextResetTime = new Date(localStorage.getItem('nextResetTime'));
     if (!nextResetTime || isNaN(nextResetTime.getTime())) {
@@ -102,10 +109,11 @@ const Activity = (props) => {
       });
     }
     
-    console.log(props.filter);
+    const activeFilter = props.filter || "default";
+    console.log(activeFilter);
     
     let filtered = storedTasks;
-    switch (props.filter) {
+    switch (activeFilter) {
       case 'short':
         filtered = storedTasks.filter(activity => !activity.longTask);
         break;
@@ -220,6 +228,11 @@ const Activity = (props) => {
     // Don't run until activities are loaded
     if (isLoading) {
       console.log('Still loading, skipping');
+      return;
+    }
+
+    if (skipNextGenerationRef.current) {
+      skipNextGenerationRef.current = false;
       return;
     }
     
@@ -486,6 +499,14 @@ const Activity = (props) => {
   }
 
   const isStretchMessage = activity.text === "Stand up and stretch if you can.";
+  const activeFilter = props.filter || "default";
+
+  const handleFilterChange = (event) => {
+    const nextFilter = event.target.value;
+    if (props.onFilterChange) {
+      props.onFilterChange(nextFilter);
+    }
+  };
 
   return (
     <>
@@ -505,7 +526,18 @@ const Activity = (props) => {
       <br/>
       <button onClick={addCustomTask} className="purple">Add Custom Task</button>
       <button onClick={() => navigate("/manage")} className="blue">Manage Activities</button>
-      <br/><br/>
+      <div className="filter-select">
+        <label htmlFor="filterSelect"><h3>Filter</h3></label>
+        <select id="filterSelect" value={activeFilter} onChange={handleFilterChange}>
+          <option value="default">No Filter</option>
+          <option value="short">Short Only</option>
+          <option value="lazy">Lazy Only</option>
+          <option value="lowPriority">Low-Priority</option>
+          <option value="highPriority">High-Priority</option>
+          <option value="mobile">Mobile-Friendly</option>
+        </select>
+      </div>
+      <br/>
     </>
   )
 };
