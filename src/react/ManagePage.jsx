@@ -3,7 +3,7 @@ import TaskItem from "./TaskItem";
 import TaskEditor from "./TaskEditor";
 import CategoryManager from "./CategoryManager";
 import { useNavigate } from "react-router-dom";
-import { getActivities, saveActivities, getCategories, saveCategories, getWipes, saveWipes, getSecrets, saveSecrets, getFilter, saveFilter, initSync, isOfflineModeEnabled } from "../../sync.js";
+import { getActivities, saveActivities, getCategories, saveCategories, getWipes, saveWipes, getSecrets, saveSecrets, getFilter, saveFilter, initSync, isOfflineModeEnabled, getCurrentTask, saveCurrentTask } from "../../sync.js";
 import { getCurrentUser, onAuthChange, logout } from "../../auth.js";
 
 const ManagePage = () => {
@@ -62,12 +62,29 @@ const ManagePage = () => {
     setExistingTask(existing);
   }
 
+  const reconcileCurrentTask = async (updatedTasks) => {
+    const currentTask = await getCurrentTask();
+    if (!currentTask) return;
+
+    const isCustomTask = currentTask.category === "Custom";
+    if (isCustomTask) return;
+
+    const matchedTask = updatedTasks.find((task) => task.text === currentTask.text);
+    if (matchedTask && !matchedTask.archived) {
+      await saveCurrentTask(matchedTask);
+      return;
+    }
+
+    await saveCurrentTask(null);
+  };
+
   const saveTask = async (newTask) => {
     const updatedTasks = existingTask
       ? tasks.map((task) => (task === editingTask ? newTask : task))
       : [...tasks, newTask];
     
     await saveActivities(updatedTasks);
+    await reconcileCurrentTask(updatedTasks);
     setTasks(updatedTasks);
     setEditingTask(null);
     setExistingTask(false);
@@ -101,6 +118,7 @@ const ManagePage = () => {
     if (window.confirm("Are you sure you want to delete this task?")) {
       const updatedTasks = tasks.filter(task => task !== taskToDelete);
       await saveActivities(updatedTasks);
+      await reconcileCurrentTask(updatedTasks);
       setTasks(updatedTasks);
     }
   };
@@ -111,6 +129,7 @@ const ManagePage = () => {
         task === taskToArchive ? { ...task, archived: true } : task
       );
       await saveActivities(updatedTasks);
+      await reconcileCurrentTask(updatedTasks);
       setTasks(updatedTasks);
     }
   };
@@ -120,6 +139,7 @@ const ManagePage = () => {
       task === taskToUnarchive ? { ...task, archived: false } : task
     );
     await saveActivities(updatedTasks);
+    await reconcileCurrentTask(updatedTasks);
     setTasks(updatedTasks);
   };
   
