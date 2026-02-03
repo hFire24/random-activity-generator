@@ -69,11 +69,11 @@ const Activity = (props) => {
         await initSync();
       }
       if (!isMounted) return;
-    const filterChanged = previousFilterRef.current !== props.filter;
-    if (filterChanged) {
-      skipNextGenerationRef.current = true;
-      previousFilterRef.current = props.filter;
-    }
+      const filterChanged = previousFilterRef.current !== props.filter;
+      if (filterChanged) {
+        skipNextGenerationRef.current = true;
+        previousFilterRef.current = props.filter;
+      }
       // Check if completed activities need to be reset
       let nextResetTime = new Date(localStorage.getItem('nextResetTime'));
       if (!nextResetTime || isNaN(nextResetTime.getTime())) {
@@ -83,7 +83,7 @@ const Activity = (props) => {
       
       let now = new Date();
       if (now > nextResetTime) {
-        resetCompletedActivities();
+        await resetCompletedActivities();
       }
       
       // Load completed activities from localStorage
@@ -142,7 +142,7 @@ const Activity = (props) => {
       }
       
       // Check if there's a saved current task and if it's from today
-      const savedTask = getCurrentTask();
+      const savedTask = await getCurrentTask();
       let hasValidTask = false;
       
       if (savedTask && savedTask.savedAt) {
@@ -556,12 +556,12 @@ const Activity = (props) => {
     setPendingCustomTask(null);
   };
   
-  const handleStandClick = () => {
+  const handleStandClick = async () => {
     let taskToShow = actualTask;
     
     // If actualTask state is null, try to get it from the saved task
     if (!taskToShow) {
-      const savedTask = getCurrentTask();
+      const savedTask = await getCurrentTask();
       if (savedTask && savedTask.actualTask) {
         taskToShow = savedTask.actualTask;
         setActualTask(taskToShow);

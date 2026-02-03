@@ -278,13 +278,14 @@ export async function saveFilter(filter) {
   localStorage.setItem('filter', nextFilter);
   
   if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
+    const currentTask = await getCurrentTask();
     updateInProgress = true;
     await syncToCloud({
       activities: getActivities(),
       categories: getCategories(),
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
-      currentTask: getCurrentTask(),
+      currentTask: currentTask,
       secrets: getSecrets(),
       filter: nextFilter,
       updatedAt: updatedAt
@@ -293,9 +294,26 @@ export async function saveFilter(filter) {
   }
 }
 // Get current task
-export function getCurrentTask() {
-  const task = localStorage.getItem('currentTask');
-  return task ? JSON.parse(task) : null;
+export async function getCurrentTask() {
+  if (isOfflineMode() || !cloudSyncEnabled || !getCurrentUser()) {
+    console.log('Offline mode or no cloud sync - getting current task from localStorage');
+    const task = localStorage.getItem('currentTask');
+    return task ? JSON.parse(task) : null;
+  }
+
+  const result = await getFromCloud();
+  if (result.success && result.data) {
+    const task = result.data.currentTask || null;
+    if (task) {
+      localStorage.setItem('currentTask', JSON.stringify(task));
+    } else {
+      localStorage.removeItem('currentTask');
+    }
+    return task;
+  }
+
+  const fallback = localStorage.getItem('currentTask');
+  return fallback ? JSON.parse(fallback) : null;
 }
 
 // Save current task (syncs to cloud if authenticated)
@@ -339,13 +357,14 @@ export async function saveSecrets(secrets) {
   localStorage.setItem('secretArray', JSON.stringify(secrets));
   
   if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
+    const currentTask = await getCurrentTask();
     updateInProgress = true;
     await syncToCloud({
       activities: getActivities(),
       categories: getCategories(),
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
-      currentTask: getCurrentTask(),
+      currentTask: currentTask,
       secrets: secrets,
       filter: getFilter(),
       updatedAt: updatedAt
