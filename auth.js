@@ -45,6 +45,13 @@ export async function signup(email, password, acceptedTermsAt) {
       categories: ['None'],
       wipes: [],
       theme: 'dark',
+      currentTask: null,
+      secrets: [],
+      filter: 'default',
+      completedActivities: [],
+      skippedActivities: [],
+      nextResetTime: null,
+      updatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       acceptedTermsAt: acceptedTermsAt || null,
       acceptedPrivacyAt: acceptedTermsAt || null
@@ -73,6 +80,13 @@ export async function signInWithGoogle(acceptedTermsAt) {
         categories: ['None'],
         wipes: [],
         theme: 'dark',
+        currentTask: null,
+        secrets: [],
+        filter: 'default',
+        completedActivities: [],
+        skippedActivities: [],
+        nextResetTime: null,
+        updatedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         acceptedTermsAt: acceptedTermsAt,
         acceptedPrivacyAt: acceptedTermsAt
@@ -169,7 +183,14 @@ export async function getFromCloud() {
         activities: [],
         categories: ['None'],
         wipes: [],
-        theme: 'dark'
+        theme: 'dark',
+        currentTask: null,
+        secrets: [],
+        filter: 'default',
+        completedActivities: [],
+        skippedActivities: [],
+        nextResetTime: null,
+        updatedAt: new Date().toISOString()
       };
       await setDoc(docRef, defaultData);
       return { success: true, data: defaultData };

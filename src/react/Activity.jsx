@@ -1,7 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import Task from "./Task";
 import { useNavigate } from "react-router-dom";
-import { getActivities, saveActivities, getWipes, getCurrentTask, saveCurrentTask, initSync } from "../../sync.js";
+import {
+  getActivities,
+  saveActivities,
+  getWipes,
+  getCurrentTask,
+  saveCurrentTask,
+  initSync,
+  getCompletedActivities,
+  saveCompletedActivities,
+  getSkippedActivities,
+  saveSkippedActivities,
+  getNextResetTime,
+  saveNextResetTime,
+  getSecrets,
+  isOfflineModeEnabled
+} from "../../sync.js";
 import { sanitizeInput } from "./utils.js";
 
 const Activity = (props) => {
@@ -29,9 +44,18 @@ const Activity = (props) => {
   const [actualTask, setActualTask] = useState(null);
   const [hasValidSavedTask, setHasValidSavedTask] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncTick, setSyncTick] = useState(0);
   const previousFilterRef = useRef(props.filter);
   const skipNextGenerationRef = useRef(false);
   const navigate = useNavigate();
+
+  const unwrapActualTask = (task) => {
+    let current = task;
+    while (current && current.actualTask) {
+      current = current.actualTask;
+    }
+    return current;
+  };
   
   const bedtimeEnabled = true;
   const sleep = 22; // 10 PM
@@ -56,8 +80,8 @@ const Activity = (props) => {
   
   const resetCompletedActivities = async () => {
     setCompletedActivities([]);
-    localStorage.setItem('completedActivities', JSON.stringify([]));
-    localStorage.setItem('nextResetTime', getTodayAtWakeTime().toISOString());
+    await saveCompletedActivities([]);
+    await saveNextResetTime(getTodayAtWakeTime().toISOString());
     await saveCurrentTask(null); // Clear current task on daily reset
     console.log("Completed activities reset for the new day.");
   };
@@ -65,7 +89,7 @@ const Activity = (props) => {
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
-      if (localStorage.getItem('offlineMode') !== 'true') {
+      if (!isOfflineModeEnabled()) {
         await initSync();
       }
       if (!isMounted) return;
@@ -75,10 +99,11 @@ const Activity = (props) => {
         previousFilterRef.current = props.filter;
       }
       // Check if completed activities need to be reset
-      let nextResetTime = new Date(localStorage.getItem('nextResetTime'));
+      const nextResetTimeValue = getNextResetTime();
+      let nextResetTime = new Date(nextResetTimeValue);
       if (!nextResetTime || isNaN(nextResetTime.getTime())) {
         nextResetTime = getTodayAtWakeTime();
-        localStorage.setItem('nextResetTime', nextResetTime.toISOString());
+        await saveNextResetTime(nextResetTime.toISOString());
       }
       
       let now = new Date();
@@ -86,9 +111,11 @@ const Activity = (props) => {
         await resetCompletedActivities();
       }
       
-      // Load completed activities from localStorage
-      const completed = JSON.parse(localStorage.getItem('completedActivities')) || [];
+      // Load completed/skipped activities from sync
+      const completed = getCompletedActivities() || [];
+      const skipped = getSkippedActivities() || [];
       setCompletedActivities(completed);
+      setSkippedActivities(skipped);
       
       let storedTasks = getActivities()
         .filter((activity) => !activity.archived)
@@ -142,8 +169,14 @@ const Activity = (props) => {
       }
       
       // Check if there's a saved current task and if it's from today
-      const savedTask = await getCurrentTask();
+      let savedTask = await getCurrentTask();
       let hasValidTask = false;
+
+      // Migration: if old data stored the stretch mask with actualTask, restore the real task
+      if (savedTask && savedTask.text === "Stand up and stretch if you can." && savedTask.actualTask) {
+        savedTask = unwrapActualTask(savedTask.actualTask);
+        await saveCurrentTask(savedTask);
+      }
       
       if (savedTask && savedTask.savedAt) {
         const savedDate = new Date(savedTask.savedAt);
@@ -157,68 +190,38 @@ const Activity = (props) => {
         
         // Don't use the "No activities available" message as a valid saved task
         const isNoActivitiesMessage = savedTask.text === "No activities available. Press 'Manage Activities' to add tasks!";
-        const isStretchMessage = savedTask.text === "Stand up and stretch if you can.";
-
         if (isSameDay && !isNoActivitiesMessage) {
-          // If it's the stretch message, only restore if actualTask exists
-          if (isStretchMessage) {
-            if (savedTask.actualTask) {
-              setActivity(savedTask);
-              setStandingTaskPending(true);
-              setActualTask(savedTask.actualTask);
-              hasValidTask = true;
-            } else {
-              // Corrupt state: stretch message but no actualTask, so clear and force new task
+          // Check if the saved task is a standing task that was completed
+          // If so, we need to go through the standing flow again
+          if (savedTask.standingTask) {
+            // Check if this task was already completed
+            if (completed.includes(savedTask.text)) {
+              // Don't restore - let it generate a new task or show the standing prompt
               saveCurrentTask(null);
+            } else {
+              // Task not completed yet, show the standing prompt mask
+              setActualTask(savedTask);
+              setActivity({
+                text: "Stand up and stretch if you can.",
+                link: null,
+                category: null,
+                importance: 1,
+                standingTask: false,
+                activeTask: false,
+                longTask: false,
+                mobileFriendlyTask: false,
+                timesCompleted: 0,
+                timesSkipped: 0,
+                dateCreated: new Date().toISOString(),
+                archived: false,
+              });
+              setStandingTaskPending(true);
+              hasValidTask = true;
             }
           } else {
-            // Check if the saved task is a standing task that was completed
-            // If so, we need to go through the standing flow again
-            if (savedTask.standingTask) {
-              // Check if this task was already completed
-              if (completed.includes(savedTask.text)) {
-                // Don't restore - let it generate a new task or show the standing prompt
-                saveCurrentTask(null);
-              } else {
-                // Task not completed yet, show the standing prompt
-                setActualTask(savedTask);
-                setActivity({
-                  text: "Stand up and stretch if you can.",
-                  link: null,
-                  category: null,
-                  importance: 1,
-                  standingTask: false,
-                  activeTask: false,
-                  longTask: false,
-                  mobileFriendlyTask: false,
-                  timesCompleted: 0,
-                  timesSkipped: 0,
-                  dateCreated: new Date().toISOString(),
-                  archived: false,
-                });
-                setStandingTaskPending(true);
-                saveCurrentTask({
-                  text: "Stand up and stretch if you can.",
-                  link: null,
-                  category: null,
-                  importance: 1,
-                  standingTask: false,
-                  activeTask: false,
-                  longTask: false,
-                  mobileFriendlyTask: false,
-                  timesCompleted: 0,
-                  timesSkipped: 0,
-                  dateCreated: new Date().toISOString(),
-                  archived: false,
-                  actualTask: savedTask
-                });
-                hasValidTask = true;
-              }
-            } else {
-              // Not a standing task, restore normally
-              setActivity(savedTask);
-              hasValidTask = true;
-            }
+            // Not a standing task, restore normally
+            setActivity(savedTask);
+            hasValidTask = true;
           }
         } else {
           // Clear the old task since it's from a previous day or is the "no activities" message
@@ -238,7 +241,18 @@ const Activity = (props) => {
     return () => {
       isMounted = false;
     };
-  }, [props.filter]);
+  }, [props.filter, syncTick]);
+
+  useEffect(() => {
+    const handleCloudSyncUpdated = () => {
+      setSyncTick((tick) => tick + 1);
+    };
+
+    window.addEventListener('cloudSyncUpdated', handleCloudSyncUpdated);
+    return () => {
+      window.removeEventListener('cloudSyncUpdated', handleCloudSyncUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     console.log('Second useEffect running. Activities:', activities.length, 'Loading:', isLoading, 'HasValid:', hasValidSavedTask);
@@ -316,21 +330,7 @@ const Activity = (props) => {
             archived: false,
           });
           setStandingTaskPending(true);
-          await saveCurrentTask({
-            text: "Stand up and stretch if you can.",
-            link: null,
-            category: null,
-            importance: 1,
-            standingTask: false,
-            activeTask: false,
-            longTask: false,
-            mobileFriendlyTask: false,
-            timesCompleted: 0,
-            timesSkipped: 0,
-            dateCreated: new Date().toISOString(),
-            archived: false,
-            actualTask: selectedActivity // Save the actual task to restore later
-          });
+          await saveCurrentTask(selectedActivity);
         } else {
           setActivity(selectedActivity);
           setStandingTaskPending(false);
@@ -387,11 +387,21 @@ const Activity = (props) => {
       if (act.category === category) {
         if (completed) {
           if (!completedActivities.includes(act.text)) {
-            setCompletedActivities(prev => [...prev, act.text]);
+            setCompletedActivities(prev => {
+              if (prev.includes(act.text)) return prev;
+              const next = [...prev, act.text];
+              void saveCompletedActivities(next);
+              return next;
+            });
           }
         } else {
           if (!skippedActivities.includes(act.text)) {
-            setSkippedActivities(prev => [...prev, act.text]);
+            setSkippedActivities(prev => {
+              if (prev.includes(act.text)) return prev;
+              const next = [...prev, act.text];
+              void saveSkippedActivities(next);
+              return next;
+            });
           }
         }
       }
@@ -402,7 +412,7 @@ const Activity = (props) => {
     if (!customText || customText.length === 0) return true;
     
     const newBreakLC = customText.toLowerCase();
-    const secretArray = JSON.parse(localStorage.getItem('secretArray')) || [];
+    const secretArray = getSecrets() || [];
     
     if (secretArray.some(item => newBreakLC.includes(item)) || newBreakLC.endsWith(" rem")) {
       alert("That should not be a priority.");
@@ -431,7 +441,7 @@ const Activity = (props) => {
       // Add to completed activities
       const newCompleted = [...completedActivities, taskToUpdate.text];
       setCompletedActivities(newCompleted);
-      localStorage.setItem('completedActivities', JSON.stringify(newCompleted));
+      await saveCompletedActivities(newCompleted);
 
       // Save the activity back
       await saveActivity(taskToUpdate);
@@ -457,7 +467,9 @@ const Activity = (props) => {
       taskToUpdate.timesSkippedConsecutively = (taskToUpdate.timesSkippedConsecutively ?? 0) + 1;
 
       // Add to skipped activities
-      setSkippedActivities(prev => [...prev, taskToUpdate.text]);
+      const nextSkipped = [...skippedActivities, taskToUpdate.text];
+      setSkippedActivities(nextSkipped);
+      await saveSkippedActivities(nextSkipped);
 
       // Save the activity back
       await saveActivity(taskToUpdate);
@@ -486,7 +498,7 @@ const Activity = (props) => {
 
         const newCompleted = [...completedActivities, taskToUpdate.text];
         setCompletedActivities(newCompleted);
-        localStorage.setItem('completedActivities', JSON.stringify(newCompleted));
+        await saveCompletedActivities(newCompleted);
 
         await saveActivity(taskToUpdate);
         handleWipedCategory(taskToUpdate.category, true);
@@ -496,7 +508,9 @@ const Activity = (props) => {
         taskToUpdate.timesSkipped = (taskToUpdate.timesSkipped ?? 0) + 1;
         taskToUpdate.timesSkippedConsecutively = (taskToUpdate.timesSkippedConsecutively ?? 0) + 1;
 
-        setSkippedActivities(prev => [...prev, taskToUpdate.text]);
+        const nextSkipped = [...skippedActivities, taskToUpdate.text];
+        setSkippedActivities(nextSkipped);
+        await saveSkippedActivities(nextSkipped);
 
         await saveActivity(taskToUpdate);
         handleWipedCategory(taskToUpdate.category, false);
@@ -562,9 +576,9 @@ const Activity = (props) => {
     // If actualTask state is null, try to get it from the saved task
     if (!taskToShow) {
       const savedTask = await getCurrentTask();
-      if (savedTask && savedTask.actualTask) {
-        taskToShow = savedTask.actualTask;
-        setActualTask(taskToShow);
+      if (savedTask && savedTask.standingTask) {
+        taskToShow = savedTask;
+        setActualTask(savedTask);
       }
     }
     

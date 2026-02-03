@@ -1,21 +1,30 @@
 import React, { useState, useEffect } from "react";
+import { getTheme, saveTheme, initSync, isOfflineModeEnabled } from "../../sync.js";
 
 const ThemeSelector = () => {
   const [theme, setTheme] = useState("dark");
 
   useEffect(() => {
-    // Load theme from localStorage or default to dark mode
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    setTheme(savedTheme);
+    let isMounted = true;
+    const loadTheme = async () => {
+      if (!isOfflineModeEnabled()) {
+        await initSync();
+      }
+      const savedTheme = getTheme() || "dark";
+      if (!isMounted) return;
+      setTheme(savedTheme);
+      document.body.className = savedTheme;
+    };
 
-    // Apply theme to body
-    document.body.className = savedTheme;
+    loadTheme();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   function changeTheme(event) {
     const newTheme = event.target.value;
-    // Save theme to localStorage
-    localStorage.setItem("theme", newTheme);
+    void saveTheme(newTheme);
     setTheme(newTheme);
   }
 

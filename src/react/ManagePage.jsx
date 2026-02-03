@@ -3,7 +3,7 @@ import TaskItem from "./TaskItem";
 import TaskEditor from "./TaskEditor";
 import CategoryManager from "./CategoryManager";
 import { useNavigate } from "react-router-dom";
-import { getActivities, saveActivities, getCategories, saveCategories, getWipes, saveWipes, getSecrets, saveSecrets, getFilter, saveFilter, initSync } from "../../sync.js";
+import { getActivities, saveActivities, getCategories, saveCategories, getWipes, saveWipes, getSecrets, saveSecrets, getFilter, saveFilter, initSync, isOfflineModeEnabled } from "../../sync.js";
 import { getCurrentUser, onAuthChange, logout } from "../../auth.js";
 
 const ManagePage = () => {
@@ -19,9 +19,9 @@ const ManagePage = () => {
 
   useEffect(() => {
     // Check authentication and initialize sync
-    const offlineMode = localStorage.getItem('offlineMode');
+    const offlineMode = isOfflineModeEnabled();
     
-    if (offlineMode === 'true') {
+    if (offlineMode) {
       // Offline mode
       setIsAuthenticated(true);
       setIsLoading(false);
@@ -42,6 +42,19 @@ const ManagePage = () => {
       
       return () => unsubscribe();
     }
+  }, []);
+
+  useEffect(() => {
+    if (isOfflineModeEnabled()) return;
+
+    const handleCloudSyncUpdated = () => {
+      setTasks(getActivities());
+    };
+
+    window.addEventListener('cloudSyncUpdated', handleCloudSyncUpdated);
+    return () => {
+      window.removeEventListener('cloudSyncUpdated', handleCloudSyncUpdated);
+    };
   }, []);
 
   function editTask(task, existing) {
@@ -231,7 +244,7 @@ const ManagePage = () => {
 
   return (
     <div>
-      {isAuthenticated && localStorage.getItem('offlineMode') !== 'true' && (
+      {isAuthenticated && !isOfflineModeEnabled() && (
         <button 
           onClick={handleLogout} 
           className="red"
@@ -280,7 +293,7 @@ const ManagePage = () => {
           <button onClick={() => navigate('/')} className="blue">Go to Home</button>
         </div>
 
-        {isAuthenticated && localStorage.getItem('offlineMode') !== 'true' && (
+        {isAuthenticated && !isOfflineModeEnabled() && (
           <div className="button-section">
             <h3>Account</h3>
             <button onClick={handleLogout} className="red">Logout</button>

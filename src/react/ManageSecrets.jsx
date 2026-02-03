@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSecrets, saveSecrets, initSync } from "../../sync.js";
+import { getSecrets, saveSecrets, initSync, isOfflineModeEnabled } from "../../sync.js";
 import { sanitizeInput } from "./utils.js";
 
 const Secrets = () => {
@@ -11,12 +11,29 @@ const Secrets = () => {
 
   useEffect(() => {
     const init = async () => {
-      await initSync(); // Initialize sync service and wait for it
+      if (!isOfflineModeEnabled()) {
+        await initSync(); // Initialize sync service and wait for it
+      }
       const loadedSecrets = getSecrets();
       setSecrets(loadedSecrets);
       setSecretsText(loadedSecrets.join('\n'));
     };
     init();
+  }, []);
+
+  useEffect(() => {
+    if (isOfflineModeEnabled()) return;
+
+    const handleCloudSyncUpdated = () => {
+      const loadedSecrets = getSecrets();
+      setSecrets(loadedSecrets);
+      setSecretsText(loadedSecrets.join('\n'));
+    };
+
+    window.addEventListener('cloudSyncUpdated', handleCloudSyncUpdated);
+    return () => {
+      window.removeEventListener('cloudSyncUpdated', handleCloudSyncUpdated);
+    };
   }, []);
 
   const handleAddSecret = async () => {

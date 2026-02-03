@@ -1,5 +1,7 @@
-// Load secretArray from localStorage or initialize an empty array
-let secretArray = getSecretArray();
+import { initSync, getSecrets, saveSecrets } from './sync.js';
+
+// Load secretArray from cloud (or localStorage only in offline mode)
+let secretArray = [];
 
 // Display secrets in the textarea on page load
 function displaySecretsInTextarea() {
@@ -18,28 +20,24 @@ document.getElementById('addSecretBtn').addEventListener('click', () => {
 });
 
 // Add event listener for saving changes made to the textarea
-document.getElementById('saveSecretsBtn').addEventListener('click', () => {
+document.getElementById('saveSecretsBtn').addEventListener('click', async () => {
   const updatedSecrets = document.getElementById('secretTextarea').value.split('\n');  // Split the textarea value by line breaks
-  saveSecrets(updatedSecrets);  // Save the updated secrets array to localStorage
+  secretArray = updatedSecrets.filter(secret => secret.trim() !== "");
+  await saveSecrets(secretArray);  // Save the updated secrets array to cloud
   alert('Secrets saved!');
 });
 
-// Function to add a secret to the array and store it in localStorage
-function addSecret(secret) {
+// Function to add a secret to the array and store it in cloud
+async function addSecret(secret) {
   secretArray.push(secret);
-  localStorage.setItem('secretArray', JSON.stringify(secretArray));
-}
-
-// Function to save the updated secret array to localStorage
-function saveSecrets(updatedSecrets) {
-  secretArray = updatedSecrets.filter(secret => secret.trim() !== "");  // Remove empty lines
-  localStorage.setItem('secretArray', JSON.stringify(secretArray));
-}
-
-// Function to get the array from localStorage
-function getSecretArray() {
-  return JSON.parse(localStorage.getItem('secretArray')) || [];
+  await saveSecrets(secretArray);
 }
 
 // Initial display of secrets when the page loads
-displaySecretsInTextarea();
+async function initSecrets() {
+  await initSync();
+  secretArray = getSecrets();
+  displaySecretsInTextarea();
+}
+
+initSecrets();
