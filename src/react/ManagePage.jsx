@@ -275,13 +275,15 @@ const ManagePage = () => {
         </div>
 
         <div className="button-section">
-          <h3>Help</h3>
+          <h3>Help & Navigation</h3>
           <button onClick={() => setShowTutorial(true)} className="purple">Tutorial</button>
+          <button onClick={() => navigate('/')} className="blue">Go to Home</button>
         </div>
 
         {isAuthenticated && localStorage.getItem('offlineMode') !== 'true' && (
           <div className="button-section">
             <h3>Account</h3>
+            <button onClick={handleLogout} className="red">Logout</button>
             <button onClick={handleDeleteAccount} className="red">Delete Account</button>
           </div>
         )}

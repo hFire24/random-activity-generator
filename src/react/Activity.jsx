@@ -23,6 +23,8 @@ const Activity = (props) => {
   const [completedActivities, setCompletedActivities] = useState([]);
   const [skippedActivities, setSkippedActivities] = useState([]);
   const [customActivity, setCustomActivity] = useState(null);
+  const [customTaskInput, setCustomTaskInput] = useState("");
+  const [pendingCustomTask, setPendingCustomTask] = useState(null);
   const [standingTaskPending, setStandingTaskPending] = useState(false);
   const [actualTask, setActualTask] = useState(null);
   const [hasValidSavedTask, setHasValidSavedTask] = useState(false);
@@ -390,7 +392,11 @@ const Activity = (props) => {
     const boringWords = ['bored', 'bore', 'lazy', 'nothing', "don't feel like doing", 'uhh', 'umm', 'hmm',
       'lack of interest', "don't know", 'don\'t know', 'dunno', 'no idea', 'no reason', 'idk'];
     
-    return boringWords.some(word => newBreakLC.includes(word));
+    if (boringWords.some(word => newBreakLC.includes(word))) {
+      alert("That doesn't seem like a valid activity.");
+      return true;
+    }
+    return false;
   };
 
   async function markAsCompleted() {
@@ -447,33 +453,88 @@ const Activity = (props) => {
     setHasValidSavedTask(false); // Force generation of new task
   }
 
-  async function addCustomTask() {
-    const customText = window.prompt("Type in the task you need to do:");
-    if (customText && customText.trim() && !filtered(customText)) {
-      const sanitizedText = sanitizeInput(customText);
-      const customTask = {
-        text: sanitizedText,
-        link: null,
-        category: "Custom",
-        importance: 2,
-        standingTask: false,
-        activeTask: false,
-        longTask: false,
-        mobileFriendlyTask: true,
-        timesCompleted: 0,
-        timesSkipped: 0,
-        timesSkippedConsecutively: 0,
-        dateCreated: new Date().toISOString(),
-        archived: false,
-      };
-      
-      // Set it as the current activity immediately
-      setActivity(customTask);
-      setHasValidSavedTask(true); // Mark that we have a valid current task
-      await saveCurrentTask(customTask);
-      setCustomActivity(sanitizedText);
+  const updatePreviousTask = async (action) => {
+    if (!activity) return;
+
+    const taskToUpdate = standingTaskPending ? actualTask : activity;
+    if (!taskToUpdate) return;
+
+    if (!customActivity && taskToUpdate.category !== "sleep") {
+      if (action === "completed" && !completedActivities.includes(taskToUpdate.text)) {
+        taskToUpdate.timesCompleted = (taskToUpdate.timesCompleted ?? 0) + 1;
+        taskToUpdate.timesSkippedConsecutively = 0;
+
+        const newCompleted = [...completedActivities, taskToUpdate.text];
+        setCompletedActivities(newCompleted);
+        localStorage.setItem('completedActivities', JSON.stringify(newCompleted));
+
+        await saveActivity(taskToUpdate);
+        handleWipedCategory(taskToUpdate.category, true);
+      }
+
+      if (action === "skipped" && !skippedActivities.includes(taskToUpdate.text)) {
+        taskToUpdate.timesSkipped = (taskToUpdate.timesSkipped ?? 0) + 1;
+        taskToUpdate.timesSkippedConsecutively = (taskToUpdate.timesSkippedConsecutively ?? 0) + 1;
+
+        setSkippedActivities(prev => [...prev, taskToUpdate.text]);
+
+        await saveActivity(taskToUpdate);
+        handleWipedCategory(taskToUpdate.category, false);
+      }
     }
+  };
+
+  async function submitCustomTask(event) {
+    event.preventDefault();
+    const customText = customTaskInput;
+    if (!customText || !customText.trim()) return;
+
+    if (filtered(customText)) {
+      setCustomTaskInput("");
+      setPendingCustomTask(null);
+      return;
+    }
+
+    const sanitizedText = sanitizeInput(customText);
+    const customTask = {
+      text: sanitizedText,
+      link: null,
+      category: "Custom",
+      importance: 2,
+      standingTask: false,
+      activeTask: false,
+      longTask: false,
+      mobileFriendlyTask: true,
+      timesCompleted: 0,
+      timesSkipped: 0,
+      timesSkippedConsecutively: 0,
+      dateCreated: new Date().toISOString(),
+      archived: false,
+    };
+
+    setPendingCustomTask(customTask);
   }
+
+  const handleCustomTaskDecision = async (decision) => {
+    if (!pendingCustomTask) return;
+
+    if (decision === "cancel") {
+      setCustomTaskInput(pendingCustomTask.text);
+      setPendingCustomTask(null);
+      return;
+    }
+
+    await updatePreviousTask(decision === "completed" ? "completed" : "skipped");
+
+    setActivity(pendingCustomTask);
+    setHasValidSavedTask(true);
+    await saveCurrentTask(pendingCustomTask);
+    setCustomActivity(pendingCustomTask.text);
+    setCustomTaskInput("");
+    setStandingTaskPending(false);
+    setActualTask(null);
+    setPendingCustomTask(null);
+  };
   
   const handleStandClick = () => {
     let taskToShow = actualTask;
@@ -517,14 +578,31 @@ const Activity = (props) => {
       >
         {activity.text}
       </Task>
-      {!isStretchMessage && (
+      {(!isStretchMessage && !pendingCustomTask) && (
         <>
           <button onClick={() => markAsCompleted()} className="activity-button green">Mark as Completed</button>
           <button onClick={() => skipTask()} className="skip-button red">Skip Task</button>
         </>
       )}
-      <br/>
-      <button onClick={addCustomTask} className="purple">Add Custom Task</button>
+      {!pendingCustomTask && <form className="custom-task-form" onSubmit={submitCustomTask}>
+        <input
+          id="customTaskInput"
+          type="text"
+          placeholder="Type a custom task"
+          value={customTaskInput}
+          onChange={(event) => setCustomTaskInput(event.target.value)}
+        />
+        <button type="submit" className="purple">Add Custom Task</button>
+      </form>}
+      {pendingCustomTask && (
+        <div className="custom-task-decision">
+          <h3>New task: {pendingCustomTask.text}</h3>
+          <p>Complete <strong>{activity.text}</strong> or skip?</p>
+          <button onClick={() => handleCustomTaskDecision("completed")} className="activity-button green">Mark as Completed</button>
+          <button onClick={() => handleCustomTaskDecision("skipped")} className="skip-button red">Skip Task</button>
+          <button onClick={() => handleCustomTaskDecision("cancel")} className="blue">Cancel</button>
+        </div>
+      )}
       <button onClick={() => navigate("/manage")} className="blue">Manage Activities</button>
       <div className="filter-select">
         <label htmlFor="filterSelect"><h3>Filter</h3></label>
