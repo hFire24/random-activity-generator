@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Task from "./Task";
 import { useNavigate } from "react-router-dom";
-import { getActivities, saveActivities, getWipes, getCurrentTask, saveCurrentTask } from "../../sync.js";
+import { getActivities, saveActivities, getWipes, getCurrentTask, saveCurrentTask, initSync } from "../../sync.js";
 import { sanitizeInput } from "./utils.js";
 
 const Activity = (props) => {
@@ -63,168 +63,181 @@ const Activity = (props) => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    const loadData = async () => {
+      if (localStorage.getItem('offlineMode') !== 'true') {
+        await initSync();
+      }
+      if (!isMounted) return;
     const filterChanged = previousFilterRef.current !== props.filter;
     if (filterChanged) {
       skipNextGenerationRef.current = true;
       previousFilterRef.current = props.filter;
     }
-    // Check if completed activities need to be reset
-    let nextResetTime = new Date(localStorage.getItem('nextResetTime'));
-    if (!nextResetTime || isNaN(nextResetTime.getTime())) {
-      nextResetTime = getTodayAtWakeTime();
-      localStorage.setItem('nextResetTime', nextResetTime.toISOString());
-    }
-    
-    let now = new Date();
-    if (now > nextResetTime) {
-      resetCompletedActivities();
-    }
-    
-    // Load completed activities from localStorage
-    const completed = JSON.parse(localStorage.getItem('completedActivities')) || [];
-    setCompletedActivities(completed);
-    
-    let storedTasks = getActivities()
-      .filter((activity) => !activity.archived)
-      .map(activity => ({
-        ...activity,
-        timesCompleted: activity.timesCompleted ?? 0,
-        timesSkipped: activity.timesSkipped ?? 0,
-        timesSkippedConsecutively: activity.timesSkippedConsecutively ?? 0
-      }));
-    
-    // Add bedtime task if it's bedtime
-    if (isBedtime(sleep, wake - 1) && bedtimeEnabled) {
-      storedTasks.push({
-        text: "Wear your pajamas and go to bed.",
-        link: null,
-        category: "sleep",
-        importance: 3,
-        standingTask: true,
-        activeTask: false,
-        longTask: false,
-        mobileFriendlyTask: true,
-        timesCompleted: 0,
-        timesSkipped: 0,
-        dateCreated: new Date().toISOString(),
-        archived: false
-      });
-    }
-    
-    const activeFilter = props.filter || "default";
-    console.log(activeFilter);
-    
-    let filtered = storedTasks;
-    switch (activeFilter) {
-      case 'short':
-        filtered = storedTasks.filter(activity => !activity.longTask);
-        break;
-      case 'lazy':
-        filtered = storedTasks.filter(activity => !activity.activeTask);
-        break;
-      case 'lowPriority':
-        filtered = storedTasks.filter(activity => activity.importance <= 2);
-        break;
-      case 'highPriority':
-        filtered = storedTasks.filter(activity => activity.importance > 1);
-        break;
-      case 'mobile':
-        filtered = storedTasks.filter(activity => activity.mobileFriendlyTask);
-        break;
-      default:
-        filtered = storedTasks;
-    }
-    
-    // Check if there's a saved current task and if it's from today
-    const savedTask = getCurrentTask();
-    let hasValidTask = false;
-    
-    if (savedTask && savedTask.savedAt) {
-      const savedDate = new Date(savedTask.savedAt);
-      const today = new Date();
+      // Check if completed activities need to be reset
+      let nextResetTime = new Date(localStorage.getItem('nextResetTime'));
+      if (!nextResetTime || isNaN(nextResetTime.getTime())) {
+        nextResetTime = getTodayAtWakeTime();
+        localStorage.setItem('nextResetTime', nextResetTime.toISOString());
+      }
       
-      // Check if the saved task is from today (same year, month, and day)
-      const isSameDay = savedDate.getFullYear() === today.getFullYear() &&
-                        savedDate.getMonth() === today.getMonth() &&
-                        savedDate.getDate() === today.getDate();
+      let now = new Date();
+      if (now > nextResetTime) {
+        resetCompletedActivities();
+      }
       
-      // Don't use the "No activities available" message as a valid saved task
-      const isNoActivitiesMessage = savedTask.text === "No activities available. Press 'Manage Activities' to add tasks!";
-      const isStretchMessage = savedTask.text === "Stand up and stretch if you can.";
+      // Load completed activities from localStorage
+      const completed = JSON.parse(localStorage.getItem('completedActivities')) || [];
+      setCompletedActivities(completed);
+      
+      let storedTasks = getActivities()
+        .filter((activity) => !activity.archived)
+        .map(activity => ({
+          ...activity,
+          timesCompleted: activity.timesCompleted ?? 0,
+          timesSkipped: activity.timesSkipped ?? 0,
+          timesSkippedConsecutively: activity.timesSkippedConsecutively ?? 0
+        }));
+      
+      // Add bedtime task if it's bedtime
+      if (isBedtime(sleep, wake - 1) && bedtimeEnabled) {
+        storedTasks.push({
+          text: "Wear your pajamas and go to bed.",
+          link: null,
+          category: "sleep",
+          importance: 3,
+          standingTask: true,
+          activeTask: false,
+          longTask: false,
+          mobileFriendlyTask: true,
+          timesCompleted: 0,
+          timesSkipped: 0,
+          dateCreated: new Date().toISOString(),
+          archived: false
+        });
+      }
+      
+      const activeFilter = props.filter || "default";
+      console.log(activeFilter);
+      
+      let filtered = storedTasks;
+      switch (activeFilter) {
+        case 'short':
+          filtered = storedTasks.filter(activity => !activity.longTask);
+          break;
+        case 'lazy':
+          filtered = storedTasks.filter(activity => !activity.activeTask);
+          break;
+        case 'lowPriority':
+          filtered = storedTasks.filter(activity => activity.importance <= 2);
+          break;
+        case 'highPriority':
+          filtered = storedTasks.filter(activity => activity.importance > 1);
+          break;
+        case 'mobile':
+          filtered = storedTasks.filter(activity => activity.mobileFriendlyTask);
+          break;
+        default:
+          filtered = storedTasks;
+      }
+      
+      // Check if there's a saved current task and if it's from today
+      const savedTask = getCurrentTask();
+      let hasValidTask = false;
+      
+      if (savedTask && savedTask.savedAt) {
+        const savedDate = new Date(savedTask.savedAt);
+        const now = new Date();
+        const nowTime = now.getTime();
+        const savedTime = savedDate.getTime();
+        const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+        
+        // Treat as valid if saved within the last 24 hours (timezone-safe)
+        const isSameDay = nowTime - savedTime <= twentyFourHoursMs;
+        
+        // Don't use the "No activities available" message as a valid saved task
+        const isNoActivitiesMessage = savedTask.text === "No activities available. Press 'Manage Activities' to add tasks!";
+        const isStretchMessage = savedTask.text === "Stand up and stretch if you can.";
 
-      if (isSameDay && !isNoActivitiesMessage) {
-        // If it's the stretch message, only restore if actualTask exists
-        if (isStretchMessage) {
-          if (savedTask.actualTask) {
-            setActivity(savedTask);
-            setStandingTaskPending(true);
-            setActualTask(savedTask.actualTask);
-            hasValidTask = true;
-          } else {
-            // Corrupt state: stretch message but no actualTask, so clear and force new task
-            saveCurrentTask(null);
-          }
-        } else {
-          // Check if the saved task is a standing task that was completed
-          // If so, we need to go through the standing flow again
-          if (savedTask.standingTask) {
-            // Check if this task was already completed
-            if (completed.includes(savedTask.text)) {
-              // Don't restore - let it generate a new task or show the standing prompt
-              saveCurrentTask(null);
-            } else {
-              // Task not completed yet, show the standing prompt
-              setActualTask(savedTask);
-              setActivity({
-                text: "Stand up and stretch if you can.",
-                link: null,
-                category: null,
-                importance: 1,
-                standingTask: false,
-                activeTask: false,
-                longTask: false,
-                mobileFriendlyTask: false,
-                timesCompleted: 0,
-                timesSkipped: 0,
-                dateCreated: new Date().toISOString(),
-                archived: false,
-              });
+        if (isSameDay && !isNoActivitiesMessage) {
+          // If it's the stretch message, only restore if actualTask exists
+          if (isStretchMessage) {
+            if (savedTask.actualTask) {
+              setActivity(savedTask);
               setStandingTaskPending(true);
-              saveCurrentTask({
-                text: "Stand up and stretch if you can.",
-                link: null,
-                category: null,
-                importance: 1,
-                standingTask: false,
-                activeTask: false,
-                longTask: false,
-                mobileFriendlyTask: false,
-                timesCompleted: 0,
-                timesSkipped: 0,
-                dateCreated: new Date().toISOString(),
-                archived: false,
-                actualTask: savedTask
-              });
+              setActualTask(savedTask.actualTask);
               hasValidTask = true;
+            } else {
+              // Corrupt state: stretch message but no actualTask, so clear and force new task
+              saveCurrentTask(null);
             }
           } else {
-            // Not a standing task, restore normally
-            setActivity(savedTask);
-            hasValidTask = true;
+            // Check if the saved task is a standing task that was completed
+            // If so, we need to go through the standing flow again
+            if (savedTask.standingTask) {
+              // Check if this task was already completed
+              if (completed.includes(savedTask.text)) {
+                // Don't restore - let it generate a new task or show the standing prompt
+                saveCurrentTask(null);
+              } else {
+                // Task not completed yet, show the standing prompt
+                setActualTask(savedTask);
+                setActivity({
+                  text: "Stand up and stretch if you can.",
+                  link: null,
+                  category: null,
+                  importance: 1,
+                  standingTask: false,
+                  activeTask: false,
+                  longTask: false,
+                  mobileFriendlyTask: false,
+                  timesCompleted: 0,
+                  timesSkipped: 0,
+                  dateCreated: new Date().toISOString(),
+                  archived: false,
+                });
+                setStandingTaskPending(true);
+                saveCurrentTask({
+                  text: "Stand up and stretch if you can.",
+                  link: null,
+                  category: null,
+                  importance: 1,
+                  standingTask: false,
+                  activeTask: false,
+                  longTask: false,
+                  mobileFriendlyTask: false,
+                  timesCompleted: 0,
+                  timesSkipped: 0,
+                  dateCreated: new Date().toISOString(),
+                  archived: false,
+                  actualTask: savedTask
+                });
+                hasValidTask = true;
+              }
+            } else {
+              // Not a standing task, restore normally
+              setActivity(savedTask);
+              hasValidTask = true;
+            }
           }
+        } else {
+          // Clear the old task since it's from a previous day or is the "no activities" message
+          saveCurrentTask(null);
         }
-      } else {
-        // Clear the old task since it's from a previous day or is the "no activities" message
+      } else if (savedTask) {
+        // Missing savedAt or corrupt state: clear so a new task is generated
         saveCurrentTask(null);
       }
-    } else if (savedTask) {
-      // Missing savedAt or corrupt state: clear so a new task is generated
-      saveCurrentTask(null);
-    }
-    
-    setHasValidSavedTask(hasValidTask);
-    setActivities(filtered);
-    setIsLoading(false);
+      
+      setHasValidSavedTask(hasValidTask);
+      setActivities(filtered);
+      setIsLoading(false);
+    };
+
+    loadData();
+    return () => {
+      isMounted = false;
+    };
   }, [props.filter]);
 
   useEffect(() => {
