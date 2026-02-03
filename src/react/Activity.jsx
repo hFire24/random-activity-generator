@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Task from "./Task";
 import { useNavigate } from "react-router-dom";
+import { getCurrentUser, onAuthChange } from "../../auth.js";
 import {
   getActivities,
   saveActivities,
@@ -90,6 +91,9 @@ const Activity = (props) => {
     let isMounted = true;
     const loadData = async () => {
       if (!isOfflineModeEnabled()) {
+        if (!getCurrentUser()) {
+          return;
+        }
         await initSync();
       }
       if (!isMounted) return;
@@ -242,6 +246,23 @@ const Activity = (props) => {
       isMounted = false;
     };
   }, [props.filter, syncTick]);
+
+  useEffect(() => {
+    if (isOfflineModeEnabled()) return;
+
+    const unsubscribe = onAuthChange(async (user) => {
+      if (user) {
+        await initSync();
+        setSyncTick((tick) => tick + 1);
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleCloudSyncUpdated = () => {
