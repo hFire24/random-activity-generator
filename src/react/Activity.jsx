@@ -217,6 +217,9 @@ const Activity = (props) => {
         // Clear the old task since it's from a previous day or is the "no activities" message
         saveCurrentTask(null);
       }
+    } else if (savedTask) {
+      // Missing savedAt or corrupt state: clear so a new task is generated
+      saveCurrentTask(null);
     }
     
     setHasValidSavedTask(hasValidTask);
@@ -244,48 +247,17 @@ const Activity = (props) => {
       return;
     }
     
-    // Filter out completed and skipped activities
-    const availableActivities = activities.filter(
-      act => !completedActivities.includes(act.text) && !skippedActivities.includes(act.text)
-    );
-    console.log('Available activities after filtering:', availableActivities.length);
-    
-    if (customActivity) {
-      // Show custom activity
-      const customTask = {
-        text: customActivity,
-        link: null,
-        category: null,
-        importance: 1,
-        standingTask: false,
-        activeTask: false,
-        longTask: false,
-        mobileFriendlyTask: false,
-        timesCompleted: 0,
-        timesSkipped: 0,
-        dateCreated: new Date().toISOString(),
-        archived: false,
-      };
-      setActivity(customTask);
-      saveCurrentTask(customTask);
-    } else if (availableActivities.length > 0) {
-      let selectedActivity;
+    const generateTask = async () => {
+      // Filter out completed and skipped activities
+      const availableActivities = activities.filter(
+        act => !completedActivities.includes(act.text) && !skippedActivities.includes(act.text)
+      );
+      console.log('Available activities after filtering:', availableActivities.length);
       
-      // 1 in 4 chance of showing sleep task at bedtime
-      if (isBedtime(sleep, wake - 1) && 
-          !Math.floor(Math.random() * 4) && 
-          availableActivities[availableActivities.length - 1]?.category === "sleep") {
-        selectedActivity = availableActivities[availableActivities.length - 1];
-      } else {
-        const randomIndex = Math.floor(Math.random() * availableActivities.length);
-        selectedActivity = availableActivities[randomIndex];
-      }
-      
-      // Check if it's a standing task
-      if (selectedActivity.standingTask && !standingTaskPending) {
-        setActualTask(selectedActivity);
-        setActivity({
-          text: "Stand up and stretch if you can.",
+      if (customActivity) {
+        // Show custom activity
+        const customTask = {
+          text: customActivity,
           link: null,
           category: null,
           importance: 1,
@@ -297,10 +269,70 @@ const Activity = (props) => {
           timesSkipped: 0,
           dateCreated: new Date().toISOString(),
           archived: false,
-        });
-        setStandingTaskPending(true);
-        saveCurrentTask({
-          text: "Stand up and stretch if you can.",
+        };
+        setActivity(customTask);
+        await saveCurrentTask(customTask);
+      } else if (availableActivities.length > 0) {
+        let selectedActivity;
+        
+        // 1 in 4 chance of showing sleep task at bedtime
+        if (isBedtime(sleep, wake - 1) && 
+            !Math.floor(Math.random() * 4) && 
+            availableActivities[availableActivities.length - 1]?.category === "sleep") {
+          selectedActivity = availableActivities[availableActivities.length - 1];
+        } else {
+          const randomIndex = Math.floor(Math.random() * availableActivities.length);
+          selectedActivity = availableActivities[randomIndex];
+        }
+        
+        // Check if it's a standing task
+        if (selectedActivity.standingTask && !standingTaskPending) {
+          setActualTask(selectedActivity);
+          setActivity({
+            text: "Stand up and stretch if you can.",
+            link: null,
+            category: null,
+            importance: 1,
+            standingTask: false,
+            activeTask: false,
+            longTask: false,
+            mobileFriendlyTask: false,
+            timesCompleted: 0,
+            timesSkipped: 0,
+            dateCreated: new Date().toISOString(),
+            archived: false,
+          });
+          setStandingTaskPending(true);
+          await saveCurrentTask({
+            text: "Stand up and stretch if you can.",
+            link: null,
+            category: null,
+            importance: 1,
+            standingTask: false,
+            activeTask: false,
+            longTask: false,
+            mobileFriendlyTask: false,
+            timesCompleted: 0,
+            timesSkipped: 0,
+            dateCreated: new Date().toISOString(),
+            archived: false,
+            actualTask: selectedActivity // Save the actual task to restore later
+          });
+        } else {
+          setActivity(selectedActivity);
+          setStandingTaskPending(false);
+          await saveCurrentTask(selectedActivity);
+        }
+      } else if (skippedActivities.length > 0) {
+        // Reset skipped activities and try again
+        setSkippedActivities([]);
+        const randomIndex = Math.floor(Math.random() * activities.length);
+        const newActivity = activities[randomIndex];
+        setActivity(newActivity);
+        await saveCurrentTask(newActivity);
+      } else {
+        const noActivityTask = {
+          text: "No activities available. Press 'Manage Activities' to add tasks!",
           link: null,
           category: null,
           importance: 1,
@@ -311,39 +343,14 @@ const Activity = (props) => {
           timesCompleted: 0,
           timesSkipped: 0,
           dateCreated: new Date().toISOString(),
-          archived: false,
-          actualTask: selectedActivity // Save the actual task to restore later
-        });
-      } else {
-        setActivity(selectedActivity);
-        setStandingTaskPending(false);
-        saveCurrentTask(selectedActivity);
+          archived: false
+        };
+        setActivity(noActivityTask);
+        await saveCurrentTask(noActivityTask);
       }
-    } else if (skippedActivities.length > 0) {
-      // Reset skipped activities and try again
-      setSkippedActivities([]);
-      const randomIndex = Math.floor(Math.random() * activities.length);
-      const newActivity = activities[randomIndex];
-      setActivity(newActivity);
-      saveCurrentTask(newActivity);
-    } else {
-      const noActivityTask = {
-        text: "No activities available. Press 'Manage Activities' to add tasks!",
-        link: null,
-        category: null,
-        importance: 1,
-        standingTask: false,
-        activeTask: false,
-        longTask: false,
-        mobileFriendlyTask: false,
-        timesCompleted: 0,
-        timesSkipped: 0,
-        dateCreated: new Date().toISOString(),
-        archived: false
-      };
-      setActivity(noActivityTask);
-      saveCurrentTask(noActivityTask);
-    }
+    };
+
+    void generateTask();
   }, [activities, completedActivities, skippedActivities, customActivity, isLoading, hasValidSavedTask]);
 
   const saveActivity = async (updatedActivity) => {

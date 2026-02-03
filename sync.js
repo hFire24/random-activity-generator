@@ -5,9 +5,37 @@ let isInitialized = false;
 let cloudSyncEnabled = false;
 let updateInProgress = false;
 
+function isOfflineMode() {
+  return localStorage.getItem('offlineMode') === 'true';
+}
+
+function getLocalUpdatedAtMillis() {
+  const updatedAt = localStorage.getItem('updatedAt');
+  if (!updatedAt) return 0;
+  const parsed = new Date(updatedAt).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function setLocalUpdatedAt(updatedAt) {
+  localStorage.setItem('updatedAt', updatedAt);
+  return updatedAt;
+}
+
+function getRemoteUpdatedAtMillis(data) {
+  if (!data || !data.updatedAt) return 0;
+  const parsed = new Date(data.updatedAt).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 // Initialize sync service
 export async function initSync() {
   if (isInitialized) return;
+
+  if (isOfflineMode()) {
+    cloudSyncEnabled = false;
+    isInitialized = true;
+    return;
+  }
   
   const user = getCurrentUser();
   if (user) {
@@ -23,6 +51,11 @@ export async function initSync() {
       const localTheme = localStorage.getItem('theme') || 'dark';
       const localSecrets = JSON.parse(localStorage.getItem('secretArray') || '[]');
       const localFilter = localStorage.getItem('filter') || 'default';
+      const localUpdatedAtMillis = getLocalUpdatedAtMillis();
+      const remoteUpdatedAtMillis = getRemoteUpdatedAtMillis(result.data);
+      const resolvedUpdatedAt = localUpdatedAtMillis
+        ? new Date(localUpdatedAtMillis).toISOString()
+        : new Date().toISOString();
       
       // If cloud is empty but local has data, push local to cloud
       if (result.data.activities.length === 0 && localActivities.length > 0) {
@@ -33,15 +66,31 @@ export async function initSync() {
           theme: localTheme,
           currentTask: JSON.parse(localStorage.getItem('currentTask') || 'null'),
           secrets: localSecrets,
-          filter: localFilter
+          filter: localFilter,
+          updatedAt: setLocalUpdatedAt(resolvedUpdatedAt)
+        });
+      } else if (localUpdatedAtMillis > remoteUpdatedAtMillis) {
+        // Local is newer, push local to cloud
+        await syncToCloud({
+          activities: localActivities,
+          categories: localCategories,
+          wipes: localWipes,
+          theme: localTheme,
+          currentTask: JSON.parse(localStorage.getItem('currentTask') || 'null'),
+          secrets: localSecrets,
+          filter: localFilter,
+          updatedAt: setLocalUpdatedAt(resolvedUpdatedAt)
         });
       } else {
-        // Use cloud data
+        // Use cloud data (remote is newer or local has no timestamp)
         localStorage.setItem('activities', JSON.stringify(result.data.activities));
         localStorage.setItem('categories', JSON.stringify(result.data.categories));
         localStorage.setItem('wipes', JSON.stringify(result.data.wipes));
         localStorage.setItem('theme', result.data.theme);
         localStorage.setItem('filter', result.data.filter || localFilter);
+        if (result.data.updatedAt) {
+          setLocalUpdatedAt(result.data.updatedAt);
+        }
         if (result.data.currentTask) {
           localStorage.setItem('currentTask', JSON.stringify(result.data.currentTask));
         }
@@ -53,11 +102,22 @@ export async function initSync() {
       // Listen for real-time updates
       listenToCloudChanges((data) => {
         if (!updateInProgress) {
+          if (isOfflineMode()) {
+            return;
+          }
+          const localUpdatedAtMillis = getLocalUpdatedAtMillis();
+          const remoteUpdatedAtMillis = getRemoteUpdatedAtMillis(data);
+          if (remoteUpdatedAtMillis && localUpdatedAtMillis && remoteUpdatedAtMillis <= localUpdatedAtMillis) {
+            return;
+          }
           localStorage.setItem('activities', JSON.stringify(data.activities));
           localStorage.setItem('categories', JSON.stringify(data.categories));
           localStorage.setItem('wipes', JSON.stringify(data.wipes));
           localStorage.setItem('theme', data.theme);
           localStorage.setItem('filter', data.filter || 'default');
+          if (data.updatedAt) {
+            setLocalUpdatedAt(data.updatedAt);
+          }
           if (data.currentTask) {
             localStorage.setItem('currentTask', JSON.stringify(data.currentTask));
           } else {
@@ -106,9 +166,10 @@ export function getActivities() {
 
 // Save activities (syncs to cloud if authenticated)
 export async function saveActivities(activities) {
+  const updatedAt = setLocalUpdatedAt(new Date().toISOString());
   localStorage.setItem("activities", JSON.stringify(activities));
   
-  if (cloudSyncEnabled && getCurrentUser()) {
+  if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
     updateInProgress = true;
     await syncToCloud({
       activities: activities,
@@ -116,7 +177,8 @@ export async function saveActivities(activities) {
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
       secrets: getSecrets(),
-      filter: getFilter()
+      filter: getFilter(),
+      updatedAt: updatedAt
     });
     updateInProgress = false;
   }
@@ -134,9 +196,10 @@ export function getCategories() {
 
 // Save categories (syncs to cloud if authenticated)
 export async function saveCategories(categories) {
+  const updatedAt = setLocalUpdatedAt(new Date().toISOString());
   localStorage.setItem('categories', JSON.stringify(categories));
   
-  if (cloudSyncEnabled && getCurrentUser()) {
+  if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
     updateInProgress = true;
     await syncToCloud({
       activities: getActivities(),
@@ -144,7 +207,8 @@ export async function saveCategories(categories) {
       wipes: getWipes(),
       theme: localStorage.getItem('theme') || 'dark',
       secrets: getSecrets(),
-      filter: getFilter()
+      filter: getFilter(),
+      updatedAt: updatedAt
     });
     updateInProgress = false;
   }
@@ -159,9 +223,10 @@ export function getWipes() {
 
 // Save wipes (syncs to cloud if authenticated)
 export async function saveWipes(wipes) {
+  const updatedAt = setLocalUpdatedAt(new Date().toISOString());
   localStorage.setItem('wipes', JSON.stringify(wipes));
   
-  if (cloudSyncEnabled && getCurrentUser()) {
+  if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
     updateInProgress = true;
     await syncToCloud({
       activities: getActivities(),
@@ -169,7 +234,8 @@ export async function saveWipes(wipes) {
       wipes: wipes,
       theme: localStorage.getItem('theme') || 'dark',
       secrets: getSecrets(),
-      filter: getFilter()
+      filter: getFilter(),
+      updatedAt: updatedAt
     });
     updateInProgress = false;
   }
@@ -177,9 +243,10 @@ export async function saveWipes(wipes) {
 
 // Save theme (syncs to cloud if authenticated)
 export async function saveTheme(theme) {
+  const updatedAt = setLocalUpdatedAt(new Date().toISOString());
   localStorage.setItem('theme', theme);
   
-  if (cloudSyncEnabled && getCurrentUser()) {
+  if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
     updateInProgress = true;
     await syncToCloud({
       activities: getActivities(),
@@ -187,7 +254,8 @@ export async function saveTheme(theme) {
       wipes: getWipes(),
       theme: theme,
       secrets: getSecrets(),
-      filter: getFilter()
+      filter: getFilter(),
+      updatedAt: updatedAt
     });
     updateInProgress = false;
   }
@@ -206,9 +274,10 @@ export function getFilter() {
 // Save filter (syncs to cloud if authenticated)
 export async function saveFilter(filter) {
   const nextFilter = filter || 'default';
+  const updatedAt = setLocalUpdatedAt(new Date().toISOString());
   localStorage.setItem('filter', nextFilter);
   
-  if (cloudSyncEnabled && getCurrentUser()) {
+  if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
     updateInProgress = true;
     await syncToCloud({
       activities: getActivities(),
@@ -217,7 +286,8 @@ export async function saveFilter(filter) {
       theme: localStorage.getItem('theme') || 'dark',
       currentTask: getCurrentTask(),
       secrets: getSecrets(),
-      filter: nextFilter
+      filter: nextFilter,
+      updatedAt: updatedAt
     });
     updateInProgress = false;
   }
@@ -230,6 +300,7 @@ export function getCurrentTask() {
 
 // Save current task (syncs to cloud if authenticated)
 export async function saveCurrentTask(task) {
+  const updatedAt = setLocalUpdatedAt(new Date().toISOString());
   if (task) {
     const taskWithTimestamp = {
       ...task,
@@ -240,7 +311,7 @@ export async function saveCurrentTask(task) {
     localStorage.removeItem('currentTask');
   }
   
-  if (cloudSyncEnabled && getCurrentUser()) {
+  if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
     updateInProgress = true;
     await syncToCloud({
       activities: getActivities(),
@@ -249,7 +320,8 @@ export async function saveCurrentTask(task) {
       theme: localStorage.getItem('theme') || 'dark',
       currentTask: task ? { ...task, savedAt: new Date().toISOString() } : null,
       secrets: getSecrets(),
-      filter: getFilter()
+      filter: getFilter(),
+      updatedAt: updatedAt
     });
     updateInProgress = false;
   }
@@ -263,9 +335,10 @@ export function getSecrets() {
 
 // Save secrets (syncs to cloud if authenticated)
 export async function saveSecrets(secrets) {
+  const updatedAt = setLocalUpdatedAt(new Date().toISOString());
   localStorage.setItem('secretArray', JSON.stringify(secrets));
   
-  if (cloudSyncEnabled && getCurrentUser()) {
+  if (!isOfflineMode() && cloudSyncEnabled && getCurrentUser()) {
     updateInProgress = true;
     await syncToCloud({
       activities: getActivities(),
@@ -274,7 +347,8 @@ export async function saveSecrets(secrets) {
       theme: localStorage.getItem('theme') || 'dark',
       currentTask: getCurrentTask(),
       secrets: secrets,
-      filter: getFilter()
+      filter: getFilter(),
+      updatedAt: updatedAt
     });
     updateInProgress = false;
   }
