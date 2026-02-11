@@ -82,6 +82,8 @@ const Activity = (props) => {
   const resetCompletedActivities = async () => {
     setCompletedActivities([]);
     await saveCompletedActivities([]);
+    setSkippedActivities([]);
+    await saveSkippedActivities([]);
     await saveNextResetTime(getTodayAtWakeTime().toISOString());
     await saveCurrentTask(null); // Clear current task on daily reset
     console.log("Completed activities reset for the new day.");
