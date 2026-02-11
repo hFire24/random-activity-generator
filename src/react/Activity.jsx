@@ -406,28 +406,23 @@ const Activity = (props) => {
     if (!wipedCategories.includes(category)) return;
     
     const allActivities = getActivities();
-    allActivities.forEach(act => {
-      if (act.category === category) {
-        if (completed) {
-          if (!completedActivities.includes(act.text)) {
-            setCompletedActivities(prev => {
-              if (prev.includes(act.text)) return prev;
-              const next = [...prev, act.text];
-              void saveCompletedActivities(next);
-              return next;
-            });
-          }
-        } else {
-          if (!skippedActivities.includes(act.text)) {
-            setSkippedActivities(prev => {
-              if (prev.includes(act.text)) return prev;
-              const next = [...prev, act.text];
-              void saveSkippedActivities(next);
-              return next;
-            });
-          }
-        }
-      }
+    const categoryTaskTexts = allActivities
+      .filter((act) => act.category === category)
+      .map((act) => act.text);
+
+    if (completed) {
+      setCompletedActivities((prev) => {
+        const next = Array.from(new Set([...prev, ...categoryTaskTexts]));
+        void saveCompletedActivities(next);
+        return next;
+      });
+      return;
+    }
+
+    setSkippedActivities((prev) => {
+      const next = Array.from(new Set([...prev, ...categoryTaskTexts]));
+      void saveSkippedActivities(next);
+      return next;
     });
   };
 
