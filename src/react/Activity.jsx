@@ -13,6 +13,8 @@ import {
   saveCompletedActivities,
   getSkippedActivities,
   saveSkippedActivities,
+  getOnHoldTasks,
+  saveOnHoldTasks,
   getNextResetTime,
   saveNextResetTime,
   getSecrets,
@@ -47,6 +49,7 @@ const Activity = (props) => {
   const [isLoading, setIsLoading] = useState(true);
   const [syncTick, setSyncTick] = useState(0);
   const [generationRequestId, setGenerationRequestId] = useState(0);
+  const [onHoldTasks, setOnHoldTasks] = useState([]);
   const previousFilterRef = useRef(props.filter);
   const skipNextGenerationRef = useRef(false);
   const lastGenerationRequestRef = useRef(0);
@@ -86,6 +89,8 @@ const Activity = (props) => {
     await saveCompletedActivities([]);
     setSkippedActivities([]);
     await saveSkippedActivities([]);
+    setOnHoldTasks([]);
+    await saveOnHoldTasks([]);
     await saveNextResetTime(getTodayAtWakeTime().toISOString());
     await saveCurrentTask(null); // Clear current task on daily reset
     console.log("Completed activities reset for the new day.");
@@ -122,8 +127,10 @@ const Activity = (props) => {
       // Load completed/skipped activities from sync
       const completed = getCompletedActivities() || [];
       const skipped = getSkippedActivities() || [];
+      const onHold = getOnHoldTasks() || [];
       setCompletedActivities(completed);
       setSkippedActivities(skipped);
+      setOnHoldTasks(onHold);
       
       let storedTasks = getActivities()
         .filter((activity) => !activity.archived)
@@ -238,6 +245,39 @@ const Activity = (props) => {
       } else if (savedTask) {
         // Missing savedAt or corrupt state: clear so a new task is generated
         saveCurrentTask(null);
+      }
+
+      if (!hasValidTask && onHold.length > 0) {
+        const nextOnHold = [...onHold];
+        const resumedTask = nextOnHold.pop();
+        setOnHoldTasks(nextOnHold);
+        await saveOnHoldTasks(nextOnHold);
+        if (resumedTask?.standingTask) {
+          setActualTask(resumedTask);
+          setActivity({
+            text: "Stand up and stretch if you can.",
+            link: null,
+            category: null,
+            importance: 1,
+            standingTask: false,
+            activeTask: false,
+            longTask: false,
+            mobileFriendlyTask: false,
+            timesCompleted: 0,
+            timesSkipped: 0,
+            dateCreated: new Date().toISOString(),
+            archived: false,
+          });
+          setStandingTaskPending(true);
+        } else if (resumedTask) {
+          setActivity(resumedTask);
+          setStandingTaskPending(false);
+        }
+        if (resumedTask) {
+          setCustomActivity(resumedTask.category === "Custom" ? resumedTask.text : null);
+          await saveCurrentTask(resumedTask);
+          hasValidTask = true;
+        }
       }
       
       setHasValidSavedTask(hasValidTask);
@@ -434,6 +474,45 @@ const Activity = (props) => {
     });
   };
 
+  const resumeOnHoldTask = async () => {
+    if (onHoldTasks.length === 0) return false;
+
+    const nextOnHold = [...onHoldTasks];
+    const resumedTask = nextOnHold.pop();
+    setOnHoldTasks(nextOnHold);
+    await saveOnHoldTasks(nextOnHold);
+
+    if (resumedTask?.standingTask) {
+      setActualTask(resumedTask);
+      setActivity({
+        text: "Stand up and stretch if you can.",
+        link: null,
+        category: null,
+        importance: 1,
+        standingTask: false,
+        activeTask: false,
+        longTask: false,
+        mobileFriendlyTask: false,
+        timesCompleted: 0,
+        timesSkipped: 0,
+        dateCreated: new Date().toISOString(),
+        archived: false,
+      });
+      setStandingTaskPending(true);
+    } else if (resumedTask) {
+      setActivity(resumedTask);
+      setStandingTaskPending(false);
+    }
+
+    if (resumedTask) {
+      setCustomActivity(resumedTask.category === "Custom" ? resumedTask.text : null);
+      await saveCurrentTask(resumedTask);
+      setHasValidSavedTask(true);
+    }
+
+    return Boolean(resumedTask);
+  };
+
   const filtered = (customText) => {
     if (!customText || customText.length === 0) return true;
     
@@ -480,8 +559,11 @@ const Activity = (props) => {
     setCustomActivity(null);
     setStandingTaskPending(false);
     setActualTask(null);
-    setHasValidSavedTask(false); // Force generation of new task
-    setGenerationRequestId((id) => id + 1);
+    const resumed = await resumeOnHoldTask();
+    if (!resumed) {
+      setHasValidSavedTask(false); // Force generation of new task
+      setGenerationRequestId((id) => id + 1);
+    }
   }
 
   async function skipTask() {
@@ -509,8 +591,11 @@ const Activity = (props) => {
     setCustomActivity(null);
     setStandingTaskPending(false);
     setActualTask(null);
-    setHasValidSavedTask(false); // Force generation of new task
-    setGenerationRequestId((id) => id + 1);
+    const resumed = await resumeOnHoldTask();
+    if (!resumed) {
+      setHasValidSavedTask(false); // Force generation of new task
+      setGenerationRequestId((id) => id + 1);
+    }
   }
 
   const updatePreviousTask = async (action) => {
@@ -582,6 +667,25 @@ const Activity = (props) => {
 
     if (decision === "cancel") {
       setCustomTaskInput(pendingCustomTask.text);
+      setPendingCustomTask(null);
+      return;
+    }
+
+    if (decision === "setAside") {
+      const taskToHold = standingTaskPending ? actualTask : activity;
+      if (taskToHold) {
+        const nextOnHold = [...onHoldTasks, taskToHold];
+        setOnHoldTasks(nextOnHold);
+        await saveOnHoldTasks(nextOnHold);
+      }
+
+      setActivity(pendingCustomTask);
+      setHasValidSavedTask(true);
+      await saveCurrentTask(pendingCustomTask);
+      setCustomActivity(pendingCustomTask.text);
+      setCustomTaskInput("");
+      setStandingTaskPending(false);
+      setActualTask(null);
       setPendingCustomTask(null);
       return;
     }
@@ -661,6 +765,7 @@ const Activity = (props) => {
           <h3>New task: {pendingCustomTask.text}</h3>
           <p>Complete <strong>{activity.text}</strong> or skip?</p>
           <button onClick={() => handleCustomTaskDecision("completed")} className="activity-button green">Mark as Completed</button>
+          <button onClick={() => handleCustomTaskDecision("setAside")} className="yellow">Set Aside</button>
           <button onClick={() => handleCustomTaskDecision("skipped")} className="skip-button red">Skip Task</button>
           <button onClick={() => handleCustomTaskDecision("cancel")} className="blue">Cancel</button>
         </div>

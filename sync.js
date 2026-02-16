@@ -15,6 +15,7 @@ const cache = {
   filter: 'default',
   completedActivities: [],
   skippedActivities: [],
+  onHoldTasks: [],
   nextResetTime: null,
   updatedAt: null
 };
@@ -37,6 +38,7 @@ function applyCloudData(data) {
   cache.filter = data?.filter || 'default';
   cache.completedActivities = Array.isArray(data?.completedActivities) ? data.completedActivities : [];
   cache.skippedActivities = Array.isArray(data?.skippedActivities) ? data.skippedActivities : [];
+  cache.onHoldTasks = Array.isArray(data?.onHoldTasks) ? data.onHoldTasks : [];
   cache.nextResetTime = data?.nextResetTime || null;
   cache.updatedAt = data?.updatedAt || null;
 }
@@ -51,6 +53,7 @@ function loadCacheFromLocalStorage() {
   cache.filter = localStorage.getItem('filter') || 'default';
   cache.completedActivities = JSON.parse(localStorage.getItem('completedActivities') || '[]');
   cache.skippedActivities = JSON.parse(localStorage.getItem('skippedActivities') || '[]');
+  cache.onHoldTasks = JSON.parse(localStorage.getItem('onHoldTasks') || '[]');
   cache.nextResetTime = localStorage.getItem('nextResetTime') || null;
   cache.updatedAt = localStorage.getItem('updatedAt') || null;
 }
@@ -66,6 +69,7 @@ function buildSyncPayload(overrides = {}) {
     filter: cache.filter,
     completedActivities: cache.completedActivities,
     skippedActivities: cache.skippedActivities,
+    onHoldTasks: cache.onHoldTasks,
     nextResetTime: cache.nextResetTime,
     updatedAt: cache.updatedAt,
     ...overrides
@@ -436,6 +440,31 @@ export async function saveSkippedActivities(skippedActivities) {
   if (cloudSyncEnabled && getCurrentUser()) {
     updateInProgress = true;
     await syncToCloud(buildSyncPayload({ skippedActivities, updatedAt }));
+    updateInProgress = false;
+  }
+}
+
+// On-hold tasks
+export function getOnHoldTasks() {
+  if (isOfflineMode()) {
+    return JSON.parse(localStorage.getItem('onHoldTasks') || '[]');
+  }
+  return cache.onHoldTasks;
+}
+
+export async function saveOnHoldTasks(onHoldTasks) {
+  const updatedAt = setLocalUpdatedAt(new Date().toISOString());
+  if (isOfflineMode()) {
+    localStorage.setItem('onHoldTasks', JSON.stringify(onHoldTasks));
+    return;
+  }
+
+  cache.onHoldTasks = onHoldTasks;
+  cache.updatedAt = updatedAt;
+
+  if (cloudSyncEnabled && getCurrentUser()) {
+    updateInProgress = true;
+    await syncToCloud(buildSyncPayload({ onHoldTasks, updatedAt }));
     updateInProgress = false;
   }
 }
