@@ -46,8 +46,10 @@ const Activity = (props) => {
   const [hasValidSavedTask, setHasValidSavedTask] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [syncTick, setSyncTick] = useState(0);
+  const [generationRequestId, setGenerationRequestId] = useState(0);
   const previousFilterRef = useRef(props.filter);
   const skipNextGenerationRef = useRef(false);
+  const lastGenerationRequestRef = useRef(0);
   const navigate = useNavigate();
 
   const unwrapActualTask = (task) => {
@@ -241,6 +243,9 @@ const Activity = (props) => {
       setHasValidSavedTask(hasValidTask);
       setActivities(filtered);
       setIsLoading(false);
+      if (!hasValidTask) {
+        setGenerationRequestId((id) => id + 1);
+      }
     };
 
     loadData();
@@ -291,11 +296,14 @@ const Activity = (props) => {
       return;
     }
     
-    // Don't generate a new task if we have a valid saved task from today
-    if (hasValidSavedTask) {
-      console.log('Has valid saved task, skipping generation');
+    if (generationRequestId === lastGenerationRequestRef.current) {
+      if (hasValidSavedTask) {
+        console.log('Has valid saved task, skipping generation');
+      }
       return;
     }
+
+    lastGenerationRequestRef.current = generationRequestId;
     
     const generateTask = async () => {
       // Filter out completed and skipped activities
@@ -387,7 +395,7 @@ const Activity = (props) => {
     };
 
     void generateTask();
-  }, [activities, completedActivities, skippedActivities, customActivity, isLoading, hasValidSavedTask]);
+  }, [activities, customActivity, isLoading, hasValidSavedTask, generationRequestId]);
 
   const saveActivity = async (updatedActivity) => {
     const allActivities = getActivities();
@@ -473,6 +481,7 @@ const Activity = (props) => {
     setStandingTaskPending(false);
     setActualTask(null);
     setHasValidSavedTask(false); // Force generation of new task
+    setGenerationRequestId((id) => id + 1);
   }
 
   async function skipTask() {
@@ -501,6 +510,7 @@ const Activity = (props) => {
     setStandingTaskPending(false);
     setActualTask(null);
     setHasValidSavedTask(false); // Force generation of new task
+    setGenerationRequestId((id) => id + 1);
   }
 
   const updatePreviousTask = async (action) => {
